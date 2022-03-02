@@ -26,10 +26,20 @@
                    Integer/parseInt))
 (def TGTOKEN  #(get-env "TGTOKEN"
                  "TGTOKEN env var is empty, please set to Telegram bot token"))
+
+(def MERCHANT  #(get-env "MERCHANT"
+                  "TGTOKEN env var is empty, please set to Telegram bot token"))
+
+(def MERCHANT-TOKEN  #(get-env "MERCHANT_TOKEN"
+                        "TGTOKEN env var is empty, please set to Telegram bot token"))
+
 (def PGURL    #(get-env "PGURL"
                  "PGURL env var is empty, please set to Postgres URL"))
-;; (def DOMAIN   #(get-env "DOMAIN"
-;;                  "DOMAIN env var is empty, please set to site domain"))
+
+(def DOMAIN   #(get-env "DOMAIN"
+                 "DOMAIN env var is empty, please set to site domain"))
+
+
 ;; (def SECRET   #(get-env "SECRET"
 ;;                  "SECRET key to sign session cookies and other"))
 ;; (def SENTRY   #(get-env "SENTRY"
