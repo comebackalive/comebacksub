@@ -7,6 +7,7 @@
             [next.jdbc.result-set :as jdbc-rs]
             [next.jdbc.prepare :as prepare]
             [next.jdbc.date-time :as jdbc-dt]
+            [migratus.core :as migratus]
             [honey.sql :as sql]
 
             [uapatron.config :as config])
@@ -35,7 +36,7 @@
 
 (defn make-ds [url]
   (let [uri        (URI. url)
-        [user pwd] (str/split (.getUserInfo uri) #":")
+        [user pwd] (some-> (.getUserInfo uri) (str/split #":"))
         port       (if (= -1 (.getPort uri))
                      5432
                      (.getPort uri))
@@ -50,8 +51,22 @@
       (set-pg-opts opts))))
 
 
+(defn migratus-config [db]
+  {:store                :database
+   :migration-dir        "migrations"
+   :init-script          "init.sql"
+   :migration-table-name "migratus"
+   :db                   db})
+
+
 (mount/defstate conn
-  :start (make-ds (config/PGURL)))
+  :start (let [conn (make-ds (config/PGURL))]
+           (doto (migratus-config {:datasource conn})
+             (migratus/init)
+             (migratus/migrate))
+           conn)
+  ;:stop (.close (:datasource conn))
+  )
 
 
 (defn format-query [query]

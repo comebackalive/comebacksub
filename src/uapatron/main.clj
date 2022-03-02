@@ -5,7 +5,8 @@
             [org.httpkit.sni-client :as sni-client]
 
             [uapatron.telegram :as telegram]
-            [uapatron.httpd]))
+            [uapatron.httpd]
+            [uapatron.db]))
 
 
 (set! *warn-on-reflection* true)
