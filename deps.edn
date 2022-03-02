@@ -1,0 +1,47 @@
+{:paths ["src" "resources" "test"]
+ :deps
+ {org.clojure/clojure        {:mvn/version "1.10.3"}
+  ring/ring-core             {:mvn/version "1.9.4"}
+  ring/ring-json             {:mvn/version "0.5.1"}
+  ring/ring-defaults         {:mvn/version "0.3.3"}
+  metosin/reitit-core        {:mvn/version "0.5.15"}
+  metosin/malli              {:mvn/version "0.6.2"}
+  http-kit/http-kit          {:mvn/version "2.6.0-alpha1"}
+  mount/mount                {:mvn/version "0.1.16"}
+  hiccup/hiccup              {:mvn/version "2.0.0-alpha2"}
+  org.clojure/core.incubator {:mvn/version "0.1.4"}
+
+  ;; logging
+  io.sentry/sentry-clj           {:mvn/version "5.3.159"}
+  org.slf4j/slf4j-api            {:mvn/version "1.7.32"}
+  org.slf4j/slf4j-simple         {:mvn/version "1.7.32"}
+  ch.qos.logback/logback-classic {:mvn/version "1.2.10"}
+  org.clojure/tools.logging      {:mvn/version "1.2.4"}
+
+  ;; db
+  org.postgresql/postgresql         {:mvn/version "42.3.1"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.2.753"}
+  com.github.seancorfield/honeysql  {:mvn/version "2.1.818"}}
+
+ :aliases
+ {:dev {:extra-deps {nrepl/nrepl                              {:mvn/version "0.8.3"}
+                     cider/cider-nrepl                        {:mvn/version "0.27.2"}
+                     refactor-nrepl/refactor-nrepl            {:mvn/version "3.1.0"}
+                     clj-commons/pomegranate                  {:mvn/version "1.2.1"}
+                     com.clojure-goes-fast/clj-async-profiler {:mvn/version "0.5.1"}
+                     org.clojure/tools.namespace              {:mvn/version "1.1.0"}}
+        :jvm-opts   ["-Djava.net.preferIPv4Stack=true"
+                     "-Djava.net.preferIPv4Addresses=true"
+                     "-Djdk.attach.allowAttachSelf"
+                     "-XX:+UnlockDiagnosticVMOptions"
+                     "-XX:+DebugNonSafepoints"]
+        :main-opts  ["-i" "dev/user.clj"
+                     "-m" "nrepl.cmdline"
+                     "-i"
+                     "--middleware" "[\"cider.nrepl/cider-middleware\",\"refactor-nrepl.middleware/wrap-refactor\"]"]}
+
+  :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.6.6" :git/sha "4d41c26"}}
+          :ns-default build}
+
+  :ancient {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+            :main-opts  ["-m" "antq.core"]}}}

@@ -1,0 +1,2 @@
+export TGTOKEN=
+export PGURL=
