@@ -1,4 +1,10 @@
 (ns uapatron.db
+  (:import [java.net URI]
+           [java.sql PreparedStatement]
+           ;; [com.zaxxer.hikari HikariDataSource]
+           [org.postgresql.ds PGSimpleDataSource]
+           [org.postgresql.jdbc PgArray]
+           [org.postgresql.util PGobject])
   (:require [clojure.string :as str]
             [mount.core :as mount]
             [ring.util.codec :as codec]
@@ -10,12 +16,7 @@
             [migratus.core :as migratus]
             [honey.sql :as sql]
 
-            [uapatron.config :as config])
-  (:import [java.net URI]
-           [java.sql PreparedStatement]
-           [org.postgresql.ds PGSimpleDataSource]
-           [org.postgresql.jdbc PgArray]
-           [org.postgresql.util PGobject]))
+            [uapatron.config :as config]))
 
 
 (set! *warn-on-reflection* true)
@@ -34,7 +35,7 @@
       "options"     (.setOptions ds v))))
 
 
-(defn make-ds [url]
+(defn make-conn [url]
   (let [uri        (URI. url)
         [user pwd] (some-> (.getUserInfo uri) (str/split #":"))
         port       (if (= -1 (.getPort uri))
@@ -60,12 +61,12 @@
 
 
 (mount/defstate conn
-  :start (let [conn (make-ds (config/PGURL))]
+  :start (let [conn (make-conn (config/PGURL))]
            (doto (migratus-config {:datasource conn})
              (migratus/init)
              (migratus/migrate))
            conn)
-  ;:stop (.close (:datasource conn))
+  ;:stop (.close conn)
   )
 
 

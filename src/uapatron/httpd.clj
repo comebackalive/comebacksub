@@ -12,7 +12,8 @@
             [org.httpkit.server :as httpd]
 
             [uapatron.config :as config]
-            [uapatron.auth :as auth]))
+            [uapatron.auth :as auth]
+            [uapatron.ui.index :as ui.index]))
 
 
 (set! *warn-on-reflection* true)
@@ -23,7 +24,10 @@
 
 
 (defn routes []
-  [["/" nil #_ ui/index]
+  [["/" ui.index/page]
+   ["/login" ui.index/start-login]
+   ["/login/:token" ui.index/process-login]
+   ["/logout" ui.index/logout]
    ["/static/{*path}" static]])
 
 
@@ -51,7 +55,9 @@
     (cond
       m        ((:result m) (assoc req :path-params (:path-params m)))
       redirect redirect
-      :else    (log/info "unknown request" req))))
+      :else    (do (log/info "unknown request" req)
+                   {:status 400
+                    :body   "Unknown URL"}))))
 
 
 (defn access-log [handler]
@@ -76,8 +82,8 @@
                      :keywordize true
                      :multipart  true}
          :cookies   true
-         ;; :session   {:store (session-cookie/cookie-store
-         ;;                      {:key (.getBytes ^String (config/SECRET) "UTF-8")})}
+         :session   {:store (session-cookie/cookie-store
+                              {:key (.getBytes ^String (config/SECRET) "UTF-8")})}
          :responses {:not-modified-responses true
                      :content-types          true
                      :default-charset        "utf-8"}})
@@ -85,5 +91,7 @@
 
 
 (mount/defstate server
-  :start (httpd/run-server (make-app) {:port (config/PORT)})
+  :start (let [port (config/PORT)]
+           (println (str "Listening to http://127.0.0.1:" port))
+           (httpd/run-server (make-app) {:port port}))
   :stop (server))
