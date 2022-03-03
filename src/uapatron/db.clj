@@ -15,13 +15,14 @@
             [next.jdbc.date-time :as jdbc-dt]
             [migratus.core :as migratus]
             [honey.sql :as sql]
-
             [uapatron.config :as config]))
 
 
 (set! *warn-on-reflection* true)
 (jdbc-dt/read-as-instant)
 
+(def ^:dynamic *current-tx* nil)
+(def ^:dynamic *after-commit* nil)
 
 (def call sql/call)
 (def fmt sql/format)
@@ -134,3 +135,32 @@
   clojure.lang.IPersistentVector
   (set-parameter [v ^PreparedStatement s i]
     (.setObject s i (->pgobject v))))
+
+(defn -eval-after-commit []
+  (when *after-commit*
+    (doseq [fn-item @*after-commit*]
+      (fn-item))
+    (reset! *after-commit* nil)))
+
+
+(defmacro tx
+  [& body]
+  `(if *current-tx*
+     (do ~@body)
+     (binding [*after-commit* (atom [])]
+       (let [r# (jdbc/with-transaction [tx# conn]
+                  (binding [*current-tx* tx#]
+                    ~@body))]
+         (do (-eval-after-commit)
+             r#)))))
+
+
+(defn keyword->pg-enum
+  "Convert a keyword value into an enum-compatible object."
+  [enum-type kw]
+  (doto (org.postgresql.util.PGobject.)
+    (.setType enum-type)
+    (.setValue (name kw))))
+
+(defn ->transaction-type [status] (keyword->pg-enum "transaction_type" status))
+(defn ->card-type [status] (keyword->pg-enum "card_type" status))

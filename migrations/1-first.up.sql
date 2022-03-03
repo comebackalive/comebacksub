@@ -37,7 +37,7 @@ create table if not exists payment_settings (
       id               serial primary key,
       default_card_id  integer references cards(id),
       user_id          integer references users(id),  
-      shedule_offset   integer,
+      shedule_offset   integer, 
       created_at       timestamp with time zone not null default now(),
       updated_at       timestamp with time zone
 );

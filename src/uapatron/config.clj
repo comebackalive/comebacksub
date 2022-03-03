@@ -29,11 +29,16 @@
                  "TGTOKEN env var is empty, please set to Telegram bot token"))
 (def PGURL    #(get-env "PGURL"
                  "PGURL env var is empty, please set to Postgres URL"))
+
 (def DOMAIN   #(get-env "DOMAIN" "sanya.ngrok.io"
                  "DOMAIN env var is empty, please set to site domain"))
-(def SECRET   #(get-env "SECRET"
-                 "SECRET key to sign session cookies and other"))
-(def POSTMARK #(get-env "POSTMARK"
-                 "POSTMARK api key to send emails"))
+(def SECRET   #(get-env "SECRET" "SECRET key to sign session cookies and other"))
+(def POSTMARK #(get-env "POSTMARK" "POSTMARK api key to send emails"))
+(def MERCHANT-ID #(get-env "MERCHANTID" "Fondy merchant id"))
+(def MERCHANT-KEY #(get-env "MERCHANTKEY" "Fondy merchant pass"))
+
+(def TIMEOUT (constantly 3000))
+
+
 ;; (def SENTRY   #(get-env "SENTRY"
 ;;                  "Sentry DSN"))

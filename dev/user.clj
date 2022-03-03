@@ -32,6 +32,9 @@
     :repositories (merge cemerick.pomegranate.aether/maven-central
                     {"clojars" "https://clojars.org/repo"})))
 
+#_(add-dep '[aleph "0.4.6"])
+#_(add-dep '[pandect "1.0.2"])
+
 
 (comment
   (add-dep '[com.clojure-goes-fast/clj-async-profiler "0.5.1"]))

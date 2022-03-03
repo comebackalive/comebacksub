@@ -13,7 +13,8 @@
 
             [uapatron.config :as config]
             [uapatron.auth :as auth]
-            [uapatron.ui.index :as ui.index]))
+            [uapatron.ui.index :as ui.index]
+            [uapatron.api.fondy :as api.fondy]))
 
 
 (set! *warn-on-reflection* true)
@@ -28,6 +29,7 @@
    ["/login" ui.index/start-login]
    ["/login/:token" ui.index/process-login]
    ["/logout" ui.index/logout]
+   ["/api/payment-callback" api.fondy/payment-callback]
    ["/static/{*path}" static]])
 
 
