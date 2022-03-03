@@ -12,13 +12,9 @@
    (or (some-> (System/getenv var-name) str/trim)
        default
        (do
-         (.write *err* (str desc "\n"))
-         (.flush *err*)
-         (System/exit 1))
-       (binding [*out* *err*]
-         (println desc)
-         (flush)
-         (Thread/sleep 100)
+         (. (Runtime/getRuntime) addShutdownHook
+           (Thread. #(binding [*out* *err*]
+                       (println desc))))
          (System/exit 1)))))
 
 
