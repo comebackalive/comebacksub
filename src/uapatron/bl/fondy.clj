@@ -58,12 +58,13 @@
 
 
 (defn make-link-ctx
-  [user amount]
+  [user amount data]
   {:order_id            (make-order-id (:id user))
-   :order_desc          "Test payment"
+   :order_desc          DESC
    :merchant_id         (config/MERCHANT-ID)
    :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
    :amount              (str (* amount 100))
+   :merchant_data       (pr-str data)
    :required_rectoken   "Y"
    :lang                (first ["uk"
                                 "en"
@@ -109,7 +110,7 @@
 
 (defn get-payment-link
   [user amount freq]
-  (let [ctx (make-link-ctx user amount)
+  (let [ctx (make-link-ctx user amount {:freq freq})
         _   (log/debug "fondy ctx" (pr-str ctx))
         res (-> (utils/json-http! :post POST-URL {:request (sign ctx)})
                 :response)]
@@ -120,7 +121,6 @@
 
 #_(println (get-payment-link {:id    "1"
                               :email "pmapcat@gmail.com"} "1" "weekly"))
-
 
 
 (defn calculate-next-charge-date
@@ -142,19 +142,29 @@
                                :user_id       uid}))))
 
 
+(defn already?
+  [order-id status]
+  (db/one {:from   [:transaction_log]
+           :select [1]
+           :where  [:and [:= :type (db/->transaction-type status)]
+                    [:= :transaction (oid->tx order-id)]]}))
+
+
 (defn process-approved!
   [{:keys [amount
            actual_currency
            rectoken
            #_rectoken_lifetime
            masked_card
+           merchant_data
            order_id]
     :as   resp}]
   (db/tx
     (let [card-id (when rectoken
                     (:id (db/one (upsert-card-q  {:user_id  (oid->uid order_id)
                                                   :token    rectoken
-                                                  :card_pan masked_card}))))]
+                                                  :card_pan masked_card}))))
+          our-data (read-string merchant_data)]
       (db/tx (db/q (save-transaction-q {:transaction (utils/parse-uuid (oid->tx order_id))
                                         :amount      (utils/parse-int amount)
                                         :order_id    order_id
@@ -164,8 +174,10 @@
                                         :currency    (db/->currency-type actual_currency)
                                         :data        (db/as-jsonb resp)}))
         (when rectoken
-          (db/q (upsert-settings-q {:user_id         (oid->uid order_id)
-                                    :default_card_id card-id}))
+          (db/q (upsert-settings-q {:user_id                (oid->uid order_id)
+                                    :default_card_id        card-id
+                                    :data                   (db/as-jsonb our-data)
+                                    :default_payment_amount (utils/parse-int amount)}))
           #_(schedule-new-order! (oid->uid order_id) (t/now)))))))
 
 
@@ -195,7 +207,8 @@
 
 
 (defn process-transaction!
-  [{:keys [order_status]
+  [{:keys [order_status
+           order_id]
     :as   req}]
   (verify! req)
   (if-let [processor (get TRANSACT-MAPPING (keyword order_status))]
