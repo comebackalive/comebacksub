@@ -4,7 +4,8 @@
 
             [uapatron.db :as db]
             [uapatron.config :as config]
-            [uapatron.utils :as utils]))
+            [uapatron.utils :as utils]
+            [clojure.tools.logging :as log]))
 
 
 (set! *warn-on-reflection* true)
@@ -35,9 +36,12 @@
 
 
 (defn sign [ctx]
-  (let [s (str (config/MERCHANT-KEY) "|"
-            (str/join \| (sort (vals ctx))))]
-    (assoc ctx :signature (sha1/sha1 s))))
+  (let [s      (->> (sort ctx)
+                    (map val)
+                    (str/join \|))
+        full-s (str (config/MERCHANT-KEY) "|" s)]
+    (log/debug "signature string" s)
+    (assoc ctx :signature (sha1/sha1 full-s))))
 
 
 (defn verify [ctx]
@@ -124,15 +128,14 @@
         (:url status)))))
 
 
-(def id 1)
-(def amount 1)
-
-
-(defn maybe-get-payment-link
-  [{:keys [id
-           email]} amount freq]
-  (cheshire.core/decode (slurp (:body (utils/json-http! :post POST-URL (make-link-ctx "1"  "2"))))))
-
+(defn get-payment-link
+  [{:keys [id email]} amount freq]
+  (let [ctx (make-link-ctx id amount)
+        res (-> (utils/json-http! :post POST-URL {:request ctx})
+                :response)]
+    (if (= "success" (:response_status res))
+      (:checkout_url res)
+      (throw (ex-info "Error getting payment link" res)))))
 
 
 (defn calculate-next-charge-date

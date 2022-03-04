@@ -39,4 +39,4 @@
         http/request
         deref
         :body
-        json/decode)))
+        (json/parse-string true))))

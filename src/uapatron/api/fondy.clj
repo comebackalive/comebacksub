@@ -1,7 +1,7 @@
 (ns uapatron.api.fondy
   (:require [uapatron.bl.fondy :as bl.fondy]
-            [uapatron.utils :as utils]
-            [uapatron.auth :as auth]))
+            [uapatron.auth :as auth]
+            [clojure.tools.logging :as log]))
 
 
 (defn payment-callback [_req]
@@ -12,16 +12,15 @@
 
 
 (defn go-to-payment [{:keys [form-params]}]
-  (when form-params
-    (let [{:keys [freq
-                  amount]} (utils/keywordize-keys form-params)]
-      (if-let [maybe-payment-link
-               (bl.fondy/maybe-get-payment-link
-                 (auth/user)
-                 freq amount)]
-        {:status  302
-         :headers {"Location" maybe-payment-link}}
-        {:status  302
-         :headers {"Location" "/?error=payment-link-receiving-error"}}))))
+  (try
+    (let [{:strs [freq amount]} form-params
+
+          link (bl.fondy/get-payment-link (auth/user) freq amount)]
+      {:status  302
+       :headers {"Location" link}})
+    (catch Exception e
+      (log/error e)
+      {:status  302
+       :headers {"Location" "/?error=payment-link-receiving-error"}})))
 
 
