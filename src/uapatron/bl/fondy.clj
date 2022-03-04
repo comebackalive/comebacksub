@@ -16,6 +16,8 @@
 
 (def DESC "Допомога savelife.in.ua")
 
+(def DESC-RECUR "Допомога savelife.in.ua (рекурентний платіж)")
+
 
 (defn sign [ctx]
   (let [s      (->> (sort ctx)
@@ -58,13 +60,13 @@
 
 
 (defn make-link-ctx
-  [user amount data]
+  [user amount freq]
   {:order_id            (make-order-id (:id user))
    :order_desc          DESC
    :merchant_id         (config/MERCHANT-ID)
    :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
    :amount              (str (* amount 100))
-   :merchant_data       (pr-str data)
+   :merchant_data       (pr-str {:freq freq})
    :required_rectoken   "Y"
    :lang                (first ["uk"
                                 "en"
@@ -80,6 +82,26 @@
                                 "hu"
                                 "de"])
    :sender_email        (:email user)
+   :response_url        (str "https://" (config/DOMAIN) "/payment-result")
+   :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
+
+
+(defn make-recurrent-payment-ctx
+  [{:keys [user_id
+           user_email
+           default_currency
+           frequency
+           default_payment_amount
+           req_token]}]
+  {:order_id            (make-order-id user_id)
+   :order_desc          DESC-RECUR
+   :merchant_id         (config/MERCHANT-ID)
+   :currency            default_currency
+   :amount              default_payment_amount
+   :merchant_data       (pr-str {:recurrent true :freq frequency})
+   :req_token           req_token
+   :required_rectoken   "Y"
+   :sender_email        user_email
    :response_url        (str "https://" (config/DOMAIN) "/payment-result")
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
 
@@ -110,7 +132,7 @@
 
 (defn get-payment-link
   [user amount freq]
-  (let [ctx (make-link-ctx user amount {:freq freq})
+  (let [ctx (make-link-ctx user amount freq)
         _   (log/debug "fondy ctx" (pr-str ctx))
         res (-> (utils/json-http! :post POST-URL {:request (sign ctx)})
                 :response)]
@@ -119,27 +141,16 @@
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))
 
-#_(println (get-payment-link {:id    "1"
-                              :email "pmapcat@gmail.com"} "1" "weekly"))
+#_(println (get-payment-link {:id    "1" :email "pmapcat@gmail.com"} "1" "weekly"))
+
+(def FREQ-MAP
+  {"day"  1
+   "week" 7})
 
 
-(defn calculate-next-charge-date
-  [now offset]
-  ;; todo
-  (+ now offset))
-
-
-(defn schedule-new-order!
-  [uid now]
-  (let [new-order (make-order-id uid)
-        settings  (db/one (user-with-settings-and-default-card-q uid))]
-    (db/q (save-transaction-q {:transaction   (oid->tx new-order)
-                               :order_id      new-order
-                               :amount        (:default_payment_amount settings)
-                               :type          :Scheduled
-                               :scheduled_for (calculate-next-charge-date now (:schedule_offset settings))
-                               :data          {}
-                               :user_id       uid}))))
+(defn calculate-next-payment-at
+  [now freq]
+  (t/+days now (get FREQ-MAP freq))) 
 
 
 (defn already?
@@ -160,10 +171,9 @@
            order_id]
     :as   resp}]
   (db/tx
-    (let [card-id (when rectoken
-                    (:id (db/one (upsert-card-q  {:user_id  (oid->uid order_id)
-                                                  :token    rectoken
-                                                  :card_pan masked_card}))))
+    (let [card-id  (when rectoken (:id (db/one (upsert-card-q  {:user_id  (oid->uid order_id)
+                                                                :token    rectoken
+                                                                :card_pan masked_card}))))
           our-data (read-string merchant_data)]
       (db/tx (db/q (save-transaction-q {:transaction (utils/parse-uuid (oid->tx order_id))
                                         :amount      (utils/parse-int amount)
@@ -174,11 +184,15 @@
                                         :currency    (db/->currency-type actual_currency)
                                         :data        (db/as-jsonb resp)}))
         (when rectoken
-          (db/q (upsert-settings-q {:user_id                (oid->uid order_id)
-                                    :default_card_id        card-id
-                                    :data                   (db/as-jsonb our-data)
-                                    :default_payment_amount (utils/parse-int amount)}))
-          #_(schedule-new-order! (oid->uid order_id) (t/now)))))))
+          (db/q (upsert-settings-q (utils/remove-nils
+                                     {:user_id                (oid->uid order_id)
+                                      :default_card_id        card-id
+                                      :frequency              (:freq our-data)
+                                      :next_payment_at       (calculate-next-payment-at
+                                                               (t/now)
+                                                               (:freq our-data))
+                                      :default_payment_amount (utils/parse-int amount)
+                                      :default_currency       (db/->currency-type actual_currency)}))))))))
 
 
 (defn write-processing!
@@ -207,8 +221,7 @@
 
 
 (defn process-transaction!
-  [{:keys [order_status
-           order_id]
+  [{:keys [order_status]
     :as   req}]
   (verify! req)
   (if-let [processor (get TRANSACT-MAPPING (keyword order_status))]

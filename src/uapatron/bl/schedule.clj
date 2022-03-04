@@ -6,39 +6,23 @@
 
 (def BATCH 100)
 
-(defn complete-scheduled-q
-  [uuid]
-  {:update    :transaction_log
-   :set       {:scheduled_for nil}
-   :where     [:and [:= :transaction uuid]
-               (db/->transaction-type :Scheduled)]
-   :returning [:transaction]})
-
-
-(defn get-scheduled-transactions-q
+(defn uids-to-charge-q
   [now]
-  {:from   [[:transaction_log :tl]]
-   :join   [[:cards :c] [:= :c.id :tl.card_id]
-            [:users :u] [:= :u.id :tl.user_id]]
-   :select [:tl.transaction
-            :tl.amount
-            :tl.type
-            :c.card_type
-            :c.token
-            :c.card_pan
-            :c.card_info]
-   :where  [:and [:= :scheduled_for (db/call :date (db/call :timezone "UTC" now))]
-            [:= :type (db/->transaction-type :Scheduled)]
-            [:= :c.deleted_at nil]]
-   :limit  BATCH})
+  {:from     [[:payment_settings :ps]]
+   :select   [:ps.id]
+   :where    [:and [:= :next_payment_at
+                    (db/call :date (db/call :timezone "UTC" now))]
+              [:not= nil :ps.default_payment_amount]
+              [:not= nil :ps.default_card_id]]
+   :order-by [[:ps.id :desc]]
+   :limit    100})
 
 
 (defn process-scheduled!
   [scheduled-processor]
   (let [now (t/now)]
-    (loop [trans (db/q (get-scheduled-transactions-q now))]
-      (when-not  (empty? trans)
-        (doseq [t trans]
-          (scheduled-processor t)
-          (db/one (complete-scheduled-q (:transaction t))))
-        (recur (db/q (get-scheduled-transactions-q now)))))))
+    (loop [ids (db/q (uids-to-charge-q now))]
+      (when-not  (empty? ids)
+        (doseq [{:keys [id]} ids]
+          (scheduled-processor id))
+        (recur (db/q (uids-to-charge-q now)))))))
