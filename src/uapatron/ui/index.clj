@@ -49,15 +49,14 @@
       {:status  302
        :headers {"Location" "/?error=email-empty"}})))
 
+
 (defn payment-result [{:keys [request-method params] :as req}]
-  (log/info "success::" params)
-  
   (if (not= request-method :post)
     {:status 405
      :body   "Method Not Allowed"}
     {:status  200
      :headers {"Content-Type" "text/html"}
-     :body    (do (bl.fondy/save-result params)
+     :body    (do (bl.fondy/process-transaction! params)
                   (ui.payment/success-t))}))
 
 

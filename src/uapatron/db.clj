@@ -156,6 +156,8 @@
     (.setObject s i (->pgobject v))))
 
 
+(def as-jsonb ->pgobject)
+
 (defn keyword->pg-enum
   "Convert a keyword value into an enum-compatible object."
   [enum-type kw]
@@ -165,3 +167,4 @@
 
 (defn ->transaction-type [status] (keyword->pg-enum "transaction_type" status))
 (defn ->card-type [status] (keyword->pg-enum "card_type" status))
+(defn ->currency-type [status] (keyword->pg-enum "currency_type" status))

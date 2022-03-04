@@ -3,6 +3,7 @@
             [pandect.algo.sha1 :as sha1]
 
             [uapatron.db :as db]
+            [uapatron.time :as t]
             [uapatron.config :as config]
             [uapatron.utils :as utils]
             [clojure.tools.logging :as log]))
@@ -16,44 +17,25 @@
 (def DESC "Допомога savelife.in.ua")
 
 
-(def TRANSACTION-LOG
-  [:transaction
-   :amount
-   :type
-   :user_id])
-
-
-(def CARD-FIELDS
-  [:user_id
-   :token
-   :card_pan
-   :card_info
-   :is_deleted])
-
-
-(def SETTINGS-FIELDS
-  [:user_id
-   :default_card_id
-   :schedule_offset])
-
-
 (defn sign [ctx]
   (let [s      (->> (sort ctx)
-                    (map val)
-                    (str/join \|))
+                 (map val)
+                 (filter (comp not empty?))
+                 (str/join \|))
         full-s (str (config/MERCHANT-KEY) "|" s)]
     (log/debug "signature string" s)
     (assoc ctx :signature (sha1/sha1 full-s))))
 
 
-(defn verify [ctx]
-  (= (sign (dissoc ctx :signature))
-     (:signature ctx)))
+(defn verify! [ctx]
+  (when-not (= (:signature (sign (dissoc ctx :signature :response_signature_string)))
+              (:signature ctx))
+    (throw (ex-info "Bad signature, check credentials" ctx))))
 
 
 (defn make-order-id [uid] (str uid ":" (utils/uuid)))
-(defn oid->uid [order-id] (first  (str/split order-id #":")))
-(defn oid->tx  [order-id] (second (str/split order-id #":")))
+(defn oid->uid [order-id] (utils/parse-int (first  (str/split order-id #":"))))
+(defn oid->tx  [order-id] (utils/parse-uuid (second (str/split order-id #":"))))
 
 
 (defn user-with-settings-and-default-card-q
@@ -104,27 +86,25 @@
 (defn save-transaction-q
   [payment-ctx]
   {:insert-into :transaction_log
-   :values      [(select-keys payment-ctx TRANSACTION-LOG)]
+   :values      [payment-ctx]
    :returning   [:transaction]})
 
 
 (defn upsert-card-q
   [card-ctx]
-  (let [cctx (utils/remove-nils (select-keys card-ctx CARD-FIELDS))]
-    {:insert-into :cards
-     :values      [cctx]
-     :upsert      {:on-conflict   [:user_id :card_pan]
-                   :do-update-set {:fields (keys cctx)}}
-     :returning   [:id]}))
+  {:insert-into   :cards
+   :values        [card-ctx]
+   :on-conflict   [:user_id :card_pan]
+   :do-update-set (into [] (keys card-ctx))
+   :returning     [:id]})
 
 
 (defn upsert-settings-q
   [settings-ctx]
-  (let [ctx (utils/remove-nils (select-keys settings-ctx SETTINGS-FIELDS))]
-    {:insert-into :settings
-     :values      [ctx]
-     :upsert      {:on-conflict   [:user_id]
-                   :do-update-set {:fields (keys ctx)}}}))
+  {:insert-into   :payment_settings
+   :values        [settings-ctx]
+   :on-conflict   [:user_id]
+   :do-update-set {:fields (keys settings-ctx)}})
 
 
 (defn get-payment-link
@@ -162,61 +142,62 @@
                                :user_id       uid}))))
 
 
-(def some-sample-callback {:amount               "4400",
-                           :settlement_currency  "",
-                           :fee                  "",
-                           :actual_currency      "UAH",
-                           :response_description "",
-                           :rectoken_lifetime    "",
-                           :settlement_date      "",
-                           :product_id           "",
-                           :rrn                  "",
-                           :settlement_amount    "0",
-                           :signature            "e9093a930250d5cc8b7ed1e530c4d27d62924c38"
-                           :merchant_id          "1397120",
-                           :sender_cell_phone    "",
-                           :card_bin             "444455",
-                           :order_status         "approved",
-                           :merchant_data        "",
-                           :payment_system       "card",
-                           :approval_code        "123456",
-                           :parent_order_id      "",
-                           :response_code        "",
-                           :currency             "UAH",
-                           :tran_type            "purchase",
-                           :reversal_amount      "0",
-                           :order_id             "1:6a49f23d-d57f-4f1f-bc0d-f6c6f3bff68c",
-                           :order_time           "04.03.2022 17:59:22",
-                           :response_status      "success",
-                           :rectoken             "",
-                           :actual_amount        "4400",
-                           :payment_id           "497061094",
-                           :sender_email         "pmapcat@gmail.com",
-                           :masked_card          "444455XXXXXX1111",
-                           :sender_account       "",
-                           :verification_status  "",
-                           :eci                  "5",
-                           :card_type            "VISA"})
+(defn process-approved!
+  [{:keys [amount
+           actual_currency
+           rectoken
+           #_rectoken_lifetime
+           masked_card
+           order_id]
+    :as   resp}]
+  (db/tx
+    (let [card-id (when rectoken
+                    (:id (db/one (upsert-card-q  {:user_id  (oid->uid order_id)
+                                                  :token    rectoken
+                                                  :card_pan masked_card}))))]
+      (db/tx (db/q (save-transaction-q {:transaction (utils/parse-uuid (oid->tx order_id))
+                                        :amount      (utils/parse-int amount)
+                                        :order_id    order_id
+                                        :card_id     card-id
+                                        :user_id     (oid->uid order_id)
+                                        :type        (db/->transaction-type :Approved)
+                                        :currency    (db/->currency-type actual_currency)
+                                        :data        (db/as-jsonb resp)}))
+        (when rectoken
+          (db/q (upsert-settings-q {:user_id         (oid->uid order_id)
+                                    :default_card_id card-id}))
+          #_(schedule-new-order! (oid->uid order_id) (t/now)))))))
 
 
-(defn handle-callback!
-  [{:keys [order_id
-           amount
-           status
-           card-info]}]
-  (let [extracted-uid (oid->uid order_id)
-        now           nil #_ (t/now)]
-    (db/tx (db/q (save-transaction-q {:transaction order_id
-                                      :amount      amount
-                                      :user_id     extracted-uid
-                                      :type        status
-                                      :data        {}}))
-      (db/q (upsert-settings-q {:user_id         extracted-uid
-                                :default_card_id (:id (db/one (upsert-card-q  card-info)))}))
-      (schedule-new-order! extracted-uid now))))
+(defn write-processing!
+  [status {:keys [amount
+                  actual_currency
+                  order_id]
+           :as   resp}]
+  (db/q (save-transaction-q {:transaction (utils/parse-uuid (oid->tx order_id))
+                             :amount      (utils/parse-int amount)
+                             :order_id    order_id
+                             :user_id     (oid->uid order_id)
+                             :type        (db/->transaction-type status)
+                             :currency    (db/->currency-type actual_currency)
+                             :data        (db/as-jsonb resp)})))
 
 
-(defn save-result
-  [req])
+(def TRANSACT-MAPPING
+  {:created    (partial :Created      write-processing!)
+   :processing (partial :InProcessing write-processing!)
+   :declined   (partial :Declined     write-processing!)
+   :reversed   (partial :Voided       write-processing!)
+   :expired    (partial :Expired      write-processing!)
+   :approved   process-approved!})
+
+
+(defn process-transaction!
+  [{:keys [order_status]
+    :as   req}]
+  (verify! req)
+  (if-let [processor (get TRANSACT-MAPPING (keyword order_status))]
+    (processor req)
+    (log/warn "Unknown status type: " order_status)))
 
 

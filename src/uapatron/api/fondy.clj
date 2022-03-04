@@ -7,10 +7,10 @@
 
 
 (defn payment-callback [_req]
-  (bl.fondy/handle-callback! _req)
   {:status  200
    :headers {"Content-Type" "application/json"}
-   :body    {:message "ok"}})
+   :body    {:message (do (bl.fondy/process-transaction! (:body _req))
+                          "ok")}})
 
 
 (defn go-to-payment [{:keys [form-params]}]

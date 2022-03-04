@@ -1,7 +1,7 @@
 (ns uapatron.bl.schedule
-  (:import [java.time Instant])
   (:require [clojure.string]
-            [uapatron.db :as db]))
+            [uapatron.db :as db]
+            [uapatron.time :as t]))
 
 
 (def BATCH 100)
@@ -35,7 +35,7 @@
 
 (defn process-scheduled!
   [scheduled-processor]
-  (let [now (Instant/now)]
+  (let [now (t/now)]
     (loop [trans (db/q (get-scheduled-transactions-q now))]
       (when-not  (empty? trans)
         (doseq [t trans]
