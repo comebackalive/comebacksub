@@ -52,8 +52,8 @@
 
 
 (defn make-order-id [uid] (str uid ":" (utils/uuid)))
-(defn oid->uid [order-id] (first  (str/split order-id \:)))
-(defn oid->tx  [order-id] (second (str/split order-id \:)))
+(defn oid->uid [order-id] (first  (str/split order-id #":")))
+(defn oid->tx  [order-id] (second (str/split order-id #":")))
 
 
 (defn user-with-settings-and-default-card-q
@@ -162,23 +162,6 @@
                                :user_id       uid}))))
 
 
-(defn handle-callback!
-  [{:keys [order_id
-           amount
-           status
-           card-info]}]
-  (let [extracted-uid (oid->uid order_id)
-        now nil #_(t/now)]
-    (db/tx (db/q (save-transaction-q {:transaction order_id
-                                            :amount      amount
-                                            :user_id     extracted-uid
-                                            :type        status
-                                            :data        {}}))
-      (db/q (upsert-settings-q {:user_id         extracted-uid
-                                :default_card_id (:id (db/one (upsert-card-q  card-info)))}))
-      (schedule-new-order! extracted-uid now))))
-
-
 (def some-sample-callback {:amount               "4400",
                            :settlement_currency  "",
                            :fee                  "",
@@ -214,6 +197,23 @@
                            :verification_status  "",
                            :eci                  "5",
                            :card_type            "VISA"})
+
+
+(defn handle-callback!
+  [{:keys [order_id
+           amount
+           status
+           card-info]}]
+  (let [extracted-uid (oid->uid order_id)
+        now           nil #_ (t/now)]
+    (db/tx (db/q (save-transaction-q {:transaction order_id
+                                      :amount      amount
+                                      :user_id     extracted-uid
+                                      :type        status
+                                      :data        {}}))
+      (db/q (upsert-settings-q {:user_id         extracted-uid
+                                :default_card_id (:id (db/one (upsert-card-q  card-info)))}))
+      (schedule-new-order! extracted-uid now))))
 
 
 (defn save-result

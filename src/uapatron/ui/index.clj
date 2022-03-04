@@ -1,5 +1,7 @@
 (ns uapatron.ui.index
-  (:require [uapatron.email :as email]
+  (:require [clojure.tools.logging :as log]
+
+            [uapatron.email :as email]
             [uapatron.auth :as auth]
             [uapatron.db :as db]
             [uapatron.ui.base :as base]
@@ -48,6 +50,8 @@
        :headers {"Location" "/?error=email-empty"}})))
 
 (defn payment-result [{:keys [request-method params] :as req}]
+  (log/info "success::" params)
+  
   (if (not= request-method :post)
     {:status 405
      :body   "Method Not Allowed"}
@@ -55,7 +59,6 @@
      :headers {"Content-Type" "text/html"}
      :body    (do (bl.fondy/save-result params)
                   (ui.payment/success-t))}))
-
 
 
 (defn process-login [{:keys [path-params]}]
