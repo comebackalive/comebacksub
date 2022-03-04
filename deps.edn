@@ -16,7 +16,6 @@
   ;; logging
   io.sentry/sentry-clj           {:mvn/version "5.3.159"}
   org.slf4j/slf4j-api            {:mvn/version "1.7.32"}
-  org.slf4j/slf4j-simple         {:mvn/version "1.7.32"}
   ch.qos.logback/logback-classic {:mvn/version "1.2.10"}
   org.clojure/tools.logging      {:mvn/version "1.2.4"}
 
