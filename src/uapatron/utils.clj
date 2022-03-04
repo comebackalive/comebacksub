@@ -31,12 +31,22 @@
 (defn json-http!
   ([method url] (json-http! method url nil))
   ([method url body]
-   (-> {:method  method
-         :url     url
-         :headers {"Content-Type" "application/json"}
-         :body    (when body (json/encode body))
-         :timeout (config/TIMEOUT)}
-        http/request
-        deref
-        :body
-        (json/parse-string keyword))))
+   (-> @(http/request {:method  method
+                       :url     url
+                       :headers {"Content-Type" "application/json"}
+                       :body    (when body (json/encode body))
+                       :timeout (config/TIMEOUT)})
+       :body
+       (json/parse-string true))))
+
+
+(defn err-redir [errname]
+  {:status  302
+   :headers {"Location" (str "/?error=" errname)}})
+
+
+(defn parse-int [value]
+  (cond
+    (integer? value) value
+    (string? value)  (try (Long/parseLong ^String value 10)
+                          (catch Exception _ nil))))

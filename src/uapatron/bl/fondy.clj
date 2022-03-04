@@ -76,14 +76,15 @@
 
 
 (defn make-link-ctx
-  [uid amount]
-  (sign {:order_id            (make-order-id uid)
-         :order_desc          DESC
-         :merchant_id         (config/MERCHANT-ID)
-         :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
-         :amount              (str amount)
-         :response_url        (str "https://" (config/DOMAIN) "/payment-result")
-         :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")}))
+  [user amount]
+  {:order_id            (make-order-id (:id user))
+   :order_desc          "Test payment"
+   :merchant_id         (config/MERCHANT-ID)
+   :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
+   :amount              (str amount)
+   :sender_email        (:email user)
+   :response_url        (str "https://" (config/DOMAIN) "/payment-result")
+   :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
 
 
 (defn save-transaction-q
@@ -113,10 +114,12 @@
 
 
 (defn get-payment-link
-  [{:keys [id email]} amount freq]
-  (let [ctx (make-link-ctx id amount)
-        res (-> (utils/json-http! :post POST-URL {:request ctx})
+  [user amount freq]
+  (let [ctx (make-link-ctx user amount)
+        _   (log/debug "fondy ctx" (pr-str ctx))
+        res (-> (utils/json-http! :post POST-URL {:request (sign ctx)})
                 :response)]
+    (prn res)
     (if (= "success" (:response_status res))
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))

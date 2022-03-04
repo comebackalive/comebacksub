@@ -1,3 +1,4 @@
-{:lint-as {mount.core/defstate clojure.core/def}
+{:lint-as {mount.core/defstate           clojure.core/def
+           com.akovantsev.blet.core/blet clojure.core/let}
  :hooks   {:analyze-call {better-cond.core/cond  hooks.better-cond/cond
                           clojure.core.strint/<< hooks.strint/<<}}}
