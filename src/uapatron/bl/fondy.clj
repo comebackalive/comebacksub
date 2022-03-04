@@ -81,7 +81,7 @@
    :order_desc          "Test payment"
    :merchant_id         (config/MERCHANT-ID)
    :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
-   :amount              (str amount)
+   :amount              (str (* amount 100))
    :sender_email        (:email user)
    :response_url        (str "https://" (config/DOMAIN) "/payment-result")
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
@@ -124,7 +124,9 @@
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))
 
-#_(get-payment-link {:id "1"} "1" "weekly")
+#_(println (get-payment-link {:id    "1"
+                              :email "pmapcat@gmail.com"} "1" "weekly"))
+
 
 
 (defn calculate-next-charge-date
@@ -159,6 +161,46 @@
                                             :type        status
                                             :data        {}}))
       (db/q (upsert-settings-q {:user_id         extracted-uid
-                                      :default_card_id (:id (db/one (upsert-card-q  card-info)))}))
+                                :default_card_id (:id (db/one (upsert-card-q  card-info)))}))
       (schedule-new-order! extracted-uid now))))
+
+(def some-sample-callback {:amount               "4400",
+                           :settlement_currency  "",
+                           :fee                  "",
+                           :actual_currency      "UAH",
+                           :response_description "",
+                           :rectoken_lifetime    "",
+                           :settlement_date      "",
+                           :product_id           "",
+                           :rrn                  "",
+                           :settlement_amount    "0",
+                           :signature            "e9093a930250d5cc8b7ed1e530c4d27d62924c38", :
+                           merchant_id           "1397120",
+                           :sender_cell_phone    "",
+                           :card_bin             "444455",
+                           :order_status         "approved",
+                           :merchant_data        "",
+                           :payment_system       "card",
+                           :approval_code        "123456",
+                           :parent_order_id      "",
+                           :response_code        "",
+                           :currency             "UAH",
+                           :tran_type            "purchase",
+                           :reversal_amount      "0",
+                           :order_id             "1:6a49f23d-d57f-4f1f-bc0d-f6c6f3bff68c",
+                           :order_time           "04.03.2022 17:59:22",
+                           :response_status      "success",
+                           :rectoken             "",
+                           :actual_amount        "4400",
+                           :payment_id           "497061094",
+                           :sender_email         "pmapcat@gmail.com",
+                           :masked_card          "444455XXXXXX1111",
+                           :sender_account       "",
+                           :verification_status  "",
+                           :eci                  "5",
+                           :card_type            "VISA"})
+
+(defn save-result
+  [req])
+
 

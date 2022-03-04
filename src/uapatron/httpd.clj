@@ -29,6 +29,7 @@
    ["/login" ui.index/start-login]
    ["/login/:token" ui.index/process-login]
    ["/logout" ui.index/logout]
+   ["/payment-result" ui.index/payment-result]
    ["/api/payment-callback" api.fondy/payment-callback]
    ["/api/go-to-payment" api.fondy/go-to-payment]
    ["/static/{*path}" static]])

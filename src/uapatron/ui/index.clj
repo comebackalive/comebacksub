@@ -3,6 +3,7 @@
             [uapatron.auth :as auth]
             [uapatron.db :as db]
             [uapatron.ui.base :as base]
+            [uapatron.bl.payment :as bl.fondy]
             [uapatron.ui.payment :as ui.payment]))
 
 
@@ -45,6 +46,16 @@
          :body    (login-sent-t {:email email})})
       {:status  302
        :headers {"Location" "/?error=email-empty"}})))
+
+(defn payment-result [{:keys [request-method params] :as req}]
+  (if (not= request-method :post)
+    {:status 405
+     :body   "Method Not Allowed"}
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body    (do (bl.fondy/save-result params)
+                  (ui.payment/success-t))}))
+
 
 
 (defn process-login [{:keys [path-params]}]

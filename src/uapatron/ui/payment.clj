@@ -31,3 +31,8 @@
     [:div
      (pay-button {:freq "week" :amount 500})
      (pay-button {:freq "week"})]))
+
+
+(defn success-t []
+  (base/wrap
+    [:h1 "Payment is successful, " (:email (auth/user))]))
