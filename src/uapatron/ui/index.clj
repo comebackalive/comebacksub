@@ -3,7 +3,7 @@
             [uapatron.auth :as auth]
             [uapatron.db :as db]
             [uapatron.ui.base :as base]
-            [uapatron.bl.payment :as bl.fondy]
+            [uapatron.bl.fondy :as bl.fondy]
             [uapatron.ui.payment :as ui.payment]))
 
 

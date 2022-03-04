@@ -174,8 +174,8 @@
                            :product_id           "",
                            :rrn                  "",
                            :settlement_amount    "0",
-                           :signature            "e9093a930250d5cc8b7ed1e530c4d27d62924c38", :
-                           merchant_id           "1397120",
+                           :signature            "e9093a930250d5cc8b7ed1e530c4d27d62924c38"
+                           :merchant_id          "1397120",
                            :sender_cell_phone    "",
                            :card_bin             "444455",
                            :order_status         "approved",
