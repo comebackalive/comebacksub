@@ -82,8 +82,8 @@
          :merchant_id         (config/MERCHANT-ID)
          :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
          :amount              (str amount)
-         :response_url        (str (config/DOMAIN) "/payment-result")
-         :server_callback_url (str (config/DOMAIN) "/api/payment-callback")}))
+         :response_url        (str "https://" (config/DOMAIN) "/payment-result")
+         :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")}))
 
 
 (defn save-transaction-q
