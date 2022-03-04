@@ -20,7 +20,7 @@
 (defn sign [ctx]
   (let [s      (->> (sort ctx)
                  (map val)
-                 (filter (comp not empty?))
+                 (filter (comp not empty? str))
                  (str/join \|))
         full-s (str (config/MERCHANT-KEY) "|" s)]
     (log/debug "signature string" s)
@@ -175,20 +175,22 @@
                   order_id]
            :as   resp}]
   (db/q (save-transaction-q {:transaction (utils/parse-uuid (oid->tx order_id))
-                             :amount      (utils/parse-int amount)
+                             :amount      (when-not (empty? amount)
+                                            (utils/parse-int amount))
                              :order_id    order_id
                              :user_id     (oid->uid order_id)
                              :type        (db/->transaction-type status)
-                             :currency    (db/->currency-type actual_currency)
+                             :currency    (when-not (empty? actual_currency)
+                                            (db/->currency-type actual_currency))
                              :data        (db/as-jsonb resp)})))
 
 
 (def TRANSACT-MAPPING
-  {:created    (partial :Created      write-processing!)
-   :processing (partial :InProcessing write-processing!)
-   :declined   (partial :Declined     write-processing!)
-   :reversed   (partial :Voided       write-processing!)
-   :expired    (partial :Expired      write-processing!)
+  {:created    (partial write-processing! :Created      )
+   :processing (partial write-processing! :InProcessing )
+   :declined   (partial write-processing! :Declined     )
+   :reversed   (partial write-processing! :Voided       )
+   :expired    (partial write-processing! :Expired      )
    :approved   process-approved!})
 
 
@@ -199,5 +201,3 @@
   (if-let [processor (get TRANSACT-MAPPING (keyword order_status))]
     (processor req)
     (log/warn "Unknown status type: " order_status)))
-
-
