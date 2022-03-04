@@ -13,6 +13,7 @@
 
 
 (def POST-URL "https://pay.fondy.eu/api/checkout/url/")
+(def RECURRING-URL "https://pay.fondy.eu/api/recurring")
 
 (def DESC "Допомога savelife.in.ua")
 
@@ -40,23 +41,19 @@
 (defn oid->tx  [order-id] (utils/parse-uuid (second (str/split order-id #":"))))
 
 
-(defn user-with-settings-and-default-card-q
+(defn get-ctx-for-recurrent-payment-q
   [uid]
   {:from   [[:users :u]]
    :join   [[:payment_settings :ps] [:= :ps.user_id :u.id]
-            [:users :u] [:= :u.id :tl.user_id]
             [:cards :c] [:= :ps.default_card_id :c.id]]
-   :select [:ps.schedule_offset
-            :u.name
-            :u.email
-            :u.phone
+   :select [[:u.id :user_id]
+            [:u.email :user_email]
+            :ps.default_currency
+            :ps.frequency
             :ps.default_payment_amount
-            :c.token
-            :c.card_pan
-            :c.card_info]
-   :where  [:and
-            [:= :u.id uid]
-            [:= :c.is_deleted nil]]})
+            :c.token]
+   :where  [:and [:= :u.id uid]
+            #_[:= :c.is_deleted nil]]})
 
 
 (defn make-link-ctx
@@ -92,15 +89,15 @@
            default_currency
            frequency
            default_payment_amount
-           req_token]}]
+           token]}]
   {:order_id            (make-order-id user_id)
    :order_desc          DESC-RECUR
    :merchant_id         (config/MERCHANT-ID)
    :currency            default_currency
    :amount              default_payment_amount
    :merchant_data       (pr-str {:recurrent true :freq frequency})
-   :req_token           req_token
    :required_rectoken   "Y"
+   :rectoken            token
    :sender_email        user_email
    :response_url        (str "https://" (config/DOMAIN) "/payment-result")
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
@@ -150,7 +147,7 @@
 
 (defn calculate-next-payment-at
   [now freq]
-  (t/+days now (get FREQ-MAP freq))) 
+  (t/+days now (get FREQ-MAP freq)))
 
 
 (defn already?
@@ -227,3 +224,19 @@
   (if-let [processor (get TRANSACT-MAPPING (keyword order_status))]
     (processor req)
     (log/warn "Unknown status type: " order_status)))
+
+
+(defn process-recurrent-payment!
+  [uid]
+  (when-let [payment-params (db/one (get-ctx-for-recurrent-payment-q uid))]
+    (let [ctx (make-recurrent-payment-ctx payment-params)
+          _   (log/debug "fondy ctx" (pr-str ctx))
+          res (-> (utils/json-http! :post RECURRING-URL {:request (sign ctx)})
+                :response)]
+      (prn res)
+      (if (= "success" (:response_status res))
+        (process-transaction! res)
+        (throw (ex-info "Recurrent payment error" res))))))
+
+;; todo: fix invalid signature
+#_(process-recurrent-payment! 1)
