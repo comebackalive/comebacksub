@@ -82,6 +82,20 @@
    :merchant_id         (config/MERCHANT-ID)
    :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
    :amount              (str (* amount 100))
+   :required_rectoken   "Y"
+   :lang                (first ["uk"
+                                "en"
+                                "lv"
+                                "fr"
+                                "cs"
+                                "ro"
+                                "ru"
+                                "it"
+                                "sk"
+                                "pl"
+                                "es"
+                                "hu"
+                                "de"])
    :sender_email        (:email user)
    :response_url        (str "https://" (config/DOMAIN) "/payment-result")
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
@@ -164,6 +178,7 @@
                                 :default_card_id (:id (db/one (upsert-card-q  card-info)))}))
       (schedule-new-order! extracted-uid now))))
 
+
 (def some-sample-callback {:amount               "4400",
                            :settlement_currency  "",
                            :fee                  "",
@@ -199,6 +214,7 @@
                            :verification_status  "",
                            :eci                  "5",
                            :card_type            "VISA"})
+
 
 (defn save-result
   [req])
