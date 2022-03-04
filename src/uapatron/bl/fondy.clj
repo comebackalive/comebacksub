@@ -110,24 +110,6 @@
                    :do-update-set {:fields (keys ctx)}}}))
 
 
-(defn make-link!
-  [uid]
-  (let [{:keys [order_id]
-         :as   ctx} (make-link-ctx uid)]
-    (db/tx
-      (let [status (utils/json-http! :post POST-URL (make-link-ctx uid))]
-        (db/q (save-transaction-q {:transaction (oid->tx order_id)
-                                   :amount      (:amount ctx)
-                                   :type        status
-                                   :data        {}
-                                   :user_id     uid}))
-        ;; TODO: think about it, transactions that are already scheduled
-        ;; and default_amounts, must add it up thoroughly
-        (db/q (upsert-settings-q {:default_payment_amount (:amount ctx)
-                                  :user_id                uid}))
-        (:url status)))))
-
-
 (defn get-payment-link
   [{:keys [id email]} amount freq]
   (let [ctx (make-link-ctx id amount)
@@ -136,6 +118,8 @@
     (if (= "success" (:response_status res))
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))
+
+#_(get-payment-link {:id "1"} "1" "weekly")
 
 
 (defn calculate-next-charge-date

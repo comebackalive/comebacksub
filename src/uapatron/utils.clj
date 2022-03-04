@@ -31,7 +31,7 @@
 (defn json-http!
   ([method url] (json-http! method url nil))
   ([method url body]
-   (->> {:method  method
+   (-> {:method  method
          :url     url
          :headers {"Content-Type" "application/json"}
          :body    (when body (json/encode body))
@@ -39,4 +39,4 @@
         http/request
         deref
         :body
-        (json/parse-string true))))
+        (json/parse-string keyword))))
