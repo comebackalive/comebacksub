@@ -13,6 +13,8 @@
 
 (def POST-URL "https://pay.fondy.eu/api/checkout/url/")
 
+(def DESC "Допомога savelife.in.ua")
+
 
 (def TRANSACTION-LOG
   [:transaction
@@ -76,7 +78,7 @@
 (defn make-link-ctx
   [uid amount]
   (sign {:order_id            (make-order-id uid)
-         :order_desc          "Test payment"
+         :order_desc          DESC
          :merchant_id         (config/MERCHANT-ID)
          :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
          :amount              (str amount)
