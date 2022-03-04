@@ -3,7 +3,6 @@
   (:require [clojure.walk :as walk]
             [org.httpkit.client :as http]
             [cheshire.core :as json]
-
             [uapatron.config :as config]))
 
 
@@ -11,6 +10,8 @@
 
 
 (defn uuid [] (UUID/randomUUID))
+
+(def keywordize-keys clojure.walk/keywordize-keys)
 
 
 (defn remove-nils
@@ -32,6 +33,7 @@
   ([method url body]
    (->> {:method  method
          :url     url
+         :headers {"Content-Type" "application/json"}
          :body    (when body (json/encode body))
          :timeout (config/TIMEOUT)}
         http/request

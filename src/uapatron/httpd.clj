@@ -30,6 +30,7 @@
    ["/login/:token" ui.index/process-login]
    ["/logout" ui.index/logout]
    ["/api/payment-callback" api.fondy/payment-callback]
+   ["/api/go-to-payment" api.fondy/go-to-payment]
    ["/static/{*path}" static]])
 
 

@@ -70,12 +70,12 @@
 
 
 (defn make-link-ctx
-  [uid]
+  [uid amount]
   (sign {:order_id            (make-order-id uid)
          :order_desc          "Test payment"
          :merchant_id         (config/MERCHANT-ID)
          :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
-         :amount              "1"
+         :amount              (str amount)
          :response_url        (str (config/DOMAIN) "/payment-result")
          :server_callback_url (str (config/DOMAIN) "/api/payment-callback")}))
 
@@ -122,6 +122,17 @@
         (db/q (upsert-settings-q {:default_payment_amount (:amount ctx)
                                   :user_id                uid}))
         (:url status)))))
+
+
+(def id 1)
+(def amount 1)
+
+
+(defn maybe-get-payment-link
+  [{:keys [id
+           email]} amount freq]
+  (cheshire.core/decode (slurp (:body (utils/json-http! :post POST-URL (make-link-ctx "1"  "2"))))))
+
 
 
 (defn calculate-next-charge-date

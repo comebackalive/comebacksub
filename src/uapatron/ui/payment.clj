@@ -1,6 +1,7 @@
 (ns uapatron.ui.payment
   (:require [uapatron.auth :as auth]
-            [uapatron.ui.base :as base]))
+            [uapatron.ui.base :as base]
+            [uapatron.bl.fondy :as bl.fondy]))
 
 
 (defn pay-button [{:keys [amount freq]}]
