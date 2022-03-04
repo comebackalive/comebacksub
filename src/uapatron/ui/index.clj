@@ -1,8 +1,9 @@
 (ns uapatron.ui.index
   (:require [uapatron.email :as email]
-            [uapatron.ui.base :as base]
             [uapatron.auth :as auth]
-            [uapatron.db :as db]))
+            [uapatron.db :as db]
+            [uapatron.ui.base :as base]
+            [uapatron.ui.payment :as ui.payment]))
 
 
 (defn login-sent-t [{:keys [email]}]
@@ -11,11 +12,6 @@
      "Authentication link has been sent to "
      email
      ". Please open the link to log in - it's going to be valid for 5 minutes."]))
-
-
-(defn dash-t []
-  (base/wrap
-    [:h1 "Hello, " (:email (auth/user))]))
 
 
 (defn anon-t []
@@ -33,7 +29,7 @@
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (if (auth/uid)
-              (dash-t)
+              (ui.payment/dash-t)
               (anon-t))})
 
 
