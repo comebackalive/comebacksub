@@ -1,7 +1,6 @@
 (ns uapatron.bl.schedule
+  (:import [java.time Instant])
   (:require [clojure.string]
-            [honeysql.core :as sql]
-            #_[honeysql.helpers :as helpers]            
             [uapatron.db :as db]))
 
 
@@ -28,7 +27,7 @@
             :c.token
             :c.card_pan
             :c.card_info]
-   :where  [:and [:= :scheduled_for (sql/call :date (sql/call :timezone "UTC" now))]
+   :where  [:and [:= :scheduled_for (db/call :date (db/call :timezone "UTC" now))]
             [:= :type (db/->transaction-type :Scheduled)]
             [:= :c.deleted_at nil]]
    :limit  BATCH})
@@ -36,10 +35,10 @@
 
 (defn process-scheduled!
   [scheduled-processor]
-  (let [now (t/now)]
+  (let [now (Instant/now)]
     (loop [trans (db/q (get-scheduled-transactions-q now))]
       (when-not  (empty? trans)
         (doseq [t trans]
           (scheduled-processor t)
-          (db/execute (complete-scheduled-q (:transaction t))))
+          (db/one (complete-scheduled-q (:transaction t))))
         (recur (db/q (get-scheduled-transactions-q now)))))))

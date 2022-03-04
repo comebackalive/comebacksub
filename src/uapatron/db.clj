@@ -86,6 +86,25 @@
   (first (q query)))
 
 
+(defn -eval-after-commit []
+  (when *after-commit*
+    (doseq [fn-item @*after-commit*]
+      (fn-item))
+    (reset! *after-commit* nil)))
+
+
+(defmacro tx
+  [& body]
+  `(if *current-tx*
+     (do ~@body)
+     (binding [*after-commit* (atom [])]
+       (let [r# (jdbc/with-transaction [tx# conn]
+                  (binding [*current-tx* tx#]
+                    ~@body))]
+         (do (-eval-after-commit)
+             r#)))))
+
+
 ;;; extensions
 
 (defn <-pgobject
@@ -135,24 +154,6 @@
   clojure.lang.IPersistentVector
   (set-parameter [v ^PreparedStatement s i]
     (.setObject s i (->pgobject v))))
-
-(defn -eval-after-commit []
-  (when *after-commit*
-    (doseq [fn-item @*after-commit*]
-      (fn-item))
-    (reset! *after-commit* nil)))
-
-
-(defmacro tx
-  [& body]
-  `(if *current-tx*
-     (do ~@body)
-     (binding [*after-commit* (atom [])]
-       (let [r# (jdbc/with-transaction [tx# conn]
-                  (binding [*current-tx* tx#]
-                    ~@body))]
-         (do (-eval-after-commit)
-             r#)))))
 
 
 (defn keyword->pg-enum
