@@ -20,13 +20,13 @@
 (defn dash-t []
   (base/wrap
     [:h1 "Hello, " (:email (auth/user))]
-    [:section
-     [:h2 "Once a day"]
-     [:div
-      (pay-button {:freq "day" :amount 100})
-      (pay-button {:freq "day"})]]
-    [:section
-     [:h2 "Once a week"]
-     [:div
-      (pay-button {:freq "week" :amount 500})
-      (pay-button {:freq "week"})]]))
+
+    [:h2 "Once a day"]
+    [:div
+     (pay-button {:freq "day" :amount 100})
+     (pay-button {:freq "day"})]
+
+    [:h2 "Once a week"]
+    [:div
+     (pay-button {:freq "week" :amount 500})
+     (pay-button {:freq "week"})]))
