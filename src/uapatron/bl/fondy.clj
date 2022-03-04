@@ -1,26 +1,53 @@
 (ns uapatron.bl.fondy
-  (:require [clojure.string]
+  (:require [clojure.string :as str]
             [pandect.algo.sha1 :as sha1]
+
             [uapatron.db :as db]
             [uapatron.config :as config]
             [uapatron.utils :as utils]))
 
+
+(set! *warn-on-reflection* true)
+
+
 (def POST-URL "https://pay.fondy.eu/api/checkout/url/")
 
-(def TRANSACTION-LOG [:transaction :amount :type :user_id])
 
-(def CARD-FIELDS [:user_id :token :card_pan :card_info :is_deleted])
+(def TRANSACTION-LOG
+  [:transaction
+   :amount
+   :type
+   :user_id])
 
-(def SETTINGS-FIELDS [:user_id :default_card_id :schedule_offset])
 
-(defn sign [ctx] (assoc ctx :signature (sha1/sha1 (str (config/MERCHANT-KEY) "|" (clojure.string/join \| (sort (vals ctx)))))))
+(def CARD-FIELDS
+  [:user_id
+   :token
+   :card_pan
+   :card_info
+   :is_deleted])
 
-(defn verify [ctx] (= (sign (dissoc ctx :signature)) (:signature ctx)))
+
+(def SETTINGS-FIELDS
+  [:user_id
+   :default_card_id
+   :schedule_offset])
+
+
+(defn sign [ctx]
+  (let [s (str (config/MERCHANT-KEY) "|"
+            (str/join \| (sort (vals ctx))))]
+    (assoc ctx :signature (sha1/sha1 s))))
+
+
+(defn verify [ctx]
+  (= (sign (dissoc ctx :signature))
+     (:signature ctx)))
 
 
 (defn make-order-id [uid] (str uid ":" (utils/uuid)))
-(defn uid-from-order-id [order-id] (first (clojure.string/split order-id \:)))
-(defn transaction-from-order-id [order-id] (second (clojure.string/split order-id \:)))
+(defn oid->uid [order-id] (first  (str/split order-id \:)))
+(defn oid->tx  [order-id] (second (str/split order-id \:)))
 
 
 (defn user-with-settings-and-default-card-q
@@ -37,7 +64,8 @@
             :c.token
             :c.card_pan
             :c.card_info]
-   :where  [:and [:= :u.id uid]
+   :where  [:and
+            [:= :u.id uid]
             [:= :c.is_deleted nil]]})
 
 
@@ -61,7 +89,7 @@
 
 (defn upsert-card-q
   [card-ctx]
-  (let [cctx (utils/remove-nil-vals (select-keys card-ctx CARD-FIELDS))]
+  (let [cctx (utils/remove-nils (select-keys card-ctx CARD-FIELDS))]
     {:insert-into :cards
      :values      [cctx]
      :upsert      {:on-conflict   [:user_id :card_pan]
@@ -71,7 +99,7 @@
 
 (defn upsert-settings-q
   [settings-ctx]
-  (let [ctx (utils/remove-nil-vals (select-keys settings-ctx SETTINGS-FIELDS))]
+  (let [ctx (utils/remove-nils (select-keys settings-ctx SETTINGS-FIELDS))]
     {:insert-into :settings
      :values      [ctx]
      :upsert      {:on-conflict   [:user_id]
@@ -84,7 +112,7 @@
          :as   ctx} (make-link-ctx uid)]
     (db/tx
       (let [status (utils/json-http! :post POST-URL (make-link-ctx uid))]
-        (db/q (save-transaction-q {:transaction (transaction-from-order-id order_id)
+        (db/q (save-transaction-q {:transaction (oid->tx order_id)
                                    :amount      (:amount ctx)
                                    :type        status
                                    :data        {}
@@ -106,7 +134,7 @@
   [uid now]
   (let [new-order (make-order-id uid)
         settings  (db/one (user-with-settings-and-default-card-q uid))]
-    (db/q (save-transaction-q {:transaction   (transaction-from-order-id new-order)
+    (db/q (save-transaction-q {:transaction   (oid->tx new-order)
                                :order_id      new-order
                                :amount        (:default_payment_amount settings)
                                :type          :Scheduled
@@ -120,7 +148,7 @@
            amount
            status
            card-info]}]
-  (let [extracted-uid (uid-from-order-id order_id)
+  (let [extracted-uid (oid->uid order_id)
         now nil #_(t/now)]
     (db/tx (db/q (save-transaction-q {:transaction order_id
                                             :amount      amount
