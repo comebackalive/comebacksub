@@ -13,6 +13,7 @@
      [:title "Save lives in Ukraine | Come Back Alive"]
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
 
+     [:link {:rel "shortcut icon" :type "image/png" :href "/static/favicon.png"}]
      [:link {:rel "stylesheet" :href "https://classless.de/classless.css"}]]))
 
 

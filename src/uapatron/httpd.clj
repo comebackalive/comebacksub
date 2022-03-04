@@ -58,8 +58,8 @@
       m        ((:result m) (assoc req :path-params (:path-params m)))
       redirect redirect
       :else    (do (log/info "unknown request" req)
-                   {:status 400
-                    :body   "Unknown URL"}))))
+                   {:status 404
+                    :body   "Not Found"}))))
 
 
 (defn access-log [handler]
