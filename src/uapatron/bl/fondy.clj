@@ -17,21 +17,21 @@
 
 (def DESC "Допомога savelife.in.ua")
 
-(def DESC-RECUR "Допомога savelife.in.ua (рекурентний платіж)")
+(def DESC-RECUR "Допомога savelife.in.ua (регулярний платіж)")
 
 
 (defn sign [ctx]
   (let [s      (->> (sort ctx)
-                 (map val)
-                 (filter (comp not empty? str))
-                 (str/join \|))
+                    (map val)
+                    (remove (comp empty? str))
+                    (str/join \|))
         full-s (str (config/MERCHANT-KEY) "|" s)]
     (assoc ctx :signature (sha1/sha1 full-s))))
 
 
 (defn verify! [ctx]
   (when-not (= (:signature (sign (dissoc ctx :signature :response_signature_string)))
-              (:signature ctx))
+               (:signature ctx))
     (throw (ex-info "Bad signature, check credentials" ctx))))
 
 
@@ -44,12 +44,12 @@
   [uid]
   {:from   [[:users :u]]
    :join   [[:payment_settings :ps] [:= :ps.user_id :u.id]
-            [:cards :c] [:= :ps.default_card_id :c.id]]
+            [:cards :c] [:= :ps.card_id :c.id]]
    :select [[:u.id :user_id]
             [:u.email :user_email]
-            :ps.default_currency
+            :ps.currency
             :ps.frequency
-            :ps.default_payment_amount
+            :ps.amount
             :c.token]
    :where  [:and [:= :u.id uid]
             #_[:= :c.is_deleted nil]]})
@@ -61,7 +61,7 @@
    :order_desc          DESC
    :merchant_id         (config/MERCHANT-ID)
    :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
-   :amount              (str (* amount 100))
+   :amount              (str amount)
    :merchant_data       (pr-str {:freq freq})
    :required_rectoken   "Y"
    :lang                (first ["uk"
@@ -85,15 +85,15 @@
 (defn make-recurrent-payment-ctx
   [{:keys [user_id
            user_email
-           default_currency
+           currency
            frequency
-           default_payment_amount
+           amount
            token]}]
   {:order_id            (make-order-id user_id)
    :order_desc          DESC-RECUR
    :merchant_id         (config/MERCHANT-ID)
-   :currency            default_currency
-   :amount              default_payment_amount
+   :currency            currency
+   :amount              amount
    :merchant_data       (pr-str {:recurrent true :freq frequency})
    :required_rectoken   "Y"
    :rectoken            token
@@ -130,7 +130,7 @@
   [user amount freq]
   (let [ctx (make-link-ctx user amount freq)
         _   (log/debug "fondy ctx" (pr-str ctx))
-        res (-> (utils/json-http! :post POST-URL {:request (sign ctx)})
+        res (-> (utils/post! POST-URL {:request (sign ctx)})
                 :response)]
     (prn res)
     (if (= "success" (:response_status res))
@@ -140,13 +140,15 @@
 #_(println (get-payment-link {:id    "1" :email "pmapcat@gmail.com"} "1" "weekly"))
 
 (def FREQ-MAP
-  {"day"  1
-   "week" 7})
+  {"day"   (partial t/+days 1)
+   "week"  (partial t/+days 7)
+   "month" (partial t/+months 1)})
 
 
 (defn calculate-next-payment-at
   [now freq]
-  (t/+days now (get FREQ-MAP freq)))
+  (let [inc-date (get FREQ-MAP freq)]
+    (inc-date now)))
 
 
 (defn already?
@@ -167,28 +169,33 @@
            order_id]
     :as   resp}]
   (db/tx
-    (let [card-id  (when rectoken (:id (db/one (upsert-card-q  {:user_id  (oid->uid order_id)
-                                                                :token    rectoken
-                                                                :card_pan masked_card}))))
+    (let [card-id  (when rectoken
+                     (:id (db/one (upsert-card-q
+                                    {:user_id  (oid->uid order_id)
+                                     :token    rectoken
+                                     :card_pan masked_card}))))
           our-data (read-string merchant_data)]
-      (db/tx (db/q (save-transaction-q {:transaction (utils/parse-uuid (oid->tx order_id))
-                                        :amount      (utils/parse-int amount)
-                                        :order_id    order_id
-                                        :card_id     card-id
-                                        :user_id     (oid->uid order_id)
-                                        :type        (db/->transaction-type :Approved)
-                                        :currency    (db/->currency-type actual_currency)
-                                        :data        (db/as-jsonb resp)}))
+      (db/tx
+        (db/q (save-transaction-q
+                {:transaction (utils/parse-uuid (oid->tx order_id))
+                 :amount      (utils/parse-int amount)
+                 :order_id    order_id
+                 :card_id     card-id
+                 :user_id     (oid->uid order_id)
+                 :type        (db/->transaction-type :Approved)
+                 :currency    (db/->currency-type actual_currency)
+                 :data        (db/as-jsonb resp)}))
         (when rectoken
-          (db/q (upsert-settings-q (utils/remove-nils
-                                     {:user_id                (oid->uid order_id)
-                                      :default_card_id        card-id
-                                      :frequency              (:freq our-data)
-                                      :next_payment_at       (calculate-next-payment-at
-                                                               (t/now)
-                                                               (:freq our-data))
-                                      :default_payment_amount (utils/parse-int amount)
-                                      :default_currency       (db/->currency-type actual_currency)}))))))))
+          (db/q (upsert-settings-q
+                  (utils/remove-nils
+                    {:user_id         (oid->uid order_id)
+                     :card_id         card-id
+                     :frequency       (:freq our-data)
+                     :next_payment_at (calculate-next-payment-at
+                                               (t/now)
+                                               (:freq our-data))
+                     :amount          (utils/parse-int amount)
+                     :currency        (db/->currency-type actual_currency)}))))))))
 
 
 (defn write-processing!
@@ -196,23 +203,24 @@
                   actual_currency
                   order_id]
            :as   resp}]
-  (db/q (save-transaction-q {:transaction (utils/parse-uuid (oid->tx order_id))
-                             :amount      (when-not (empty? amount)
-                                            (utils/parse-int amount))
-                             :order_id    order_id
-                             :user_id     (oid->uid order_id)
-                             :type        (db/->transaction-type status)
-                             :currency    (when-not (empty? actual_currency)
-                                            (db/->currency-type actual_currency))
-                             :data        (db/as-jsonb resp)})))
+  (db/q (save-transaction-q
+          {:transaction (utils/parse-uuid (oid->tx order_id))
+           :amount      (when-not (empty? amount)
+                          (utils/parse-int amount))
+           :order_id    order_id
+           :user_id     (oid->uid order_id)
+           :type        (db/->transaction-type status)
+           :currency    (when-not (empty? actual_currency)
+                          (db/->currency-type actual_currency))
+           :data        (db/as-jsonb resp)})))
 
 
 (def TRANSACT-MAPPING
-  {:created    (partial write-processing! :Created      )
-   :processing (partial write-processing! :InProcessing )
-   :declined   (partial write-processing! :Declined     )
-   :reversed   (partial write-processing! :Voided       )
-   :expired    (partial write-processing! :Expired      )
+  {:created    (partial write-processing! :Created)
+   :processing (partial write-processing! :InProcessing)
+   :declined   (partial write-processing! :Declined)
+   :reversed   (partial write-processing! :Voided)
+   :expired    (partial write-processing! :Expired)
    :approved   process-approved!})
 
 
@@ -230,7 +238,7 @@
   (when-let [payment-params (db/one (get-ctx-for-recurrent-payment-q uid))]
     (let [ctx (make-recurrent-payment-ctx payment-params)
           _   (log/debug "fondy ctx" (pr-str ctx))
-          res (-> (utils/json-http! :post RECURRING-URL {:request (sign ctx)})
+          res (-> (utils/post! RECURRING-URL {:request (sign ctx)})
                 :response)]
       (prn res)
       (if (= "success" (:response_status res))

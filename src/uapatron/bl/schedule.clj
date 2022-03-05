@@ -1,28 +1,27 @@
 (ns uapatron.bl.schedule
-  (:require [clojure.string]
-            [uapatron.db :as db]
-            [uapatron.time :as t]))
+  (:require [uapatron.db :as db]
+            [uapatron.bl.fondy :as fondy]))
 
 
 (def BATCH 100)
 
+
 (defn uids-to-charge-q
-  [now]
+  []
   {:from     [[:payment_settings :ps]]
    :select   [:ps.id]
-   :where    [:and [:= :next_payment_at
-                    (db/call :date (db/call :timezone "UTC" now))]
-              [:not= nil :ps.default_payment_amount]
-              [:not= nil :ps.default_card_id]]
+   :where    [:and [:< :next_payment_at
+                    [:raw "current_date + 1"]]
+              [:not= :ps.amount nil]
+              [:not= :ps.card_id nil]]
    :order-by [[:ps.id :desc]]
    :limit    100})
 
 
 (defn process-scheduled!
-  [scheduled-processor]
-  (let [now (t/now)]
-    (loop [ids (db/q (uids-to-charge-q now))]
-      (when-not  (empty? ids)
-        (doseq [{:keys [id]} ids]
-          (scheduled-processor id))
-        (recur (db/q (uids-to-charge-q now)))))))
+  []
+  (let [ids (db/q (uids-to-charge-q))]
+    (for [item ids]
+      (fondy/process-recurrent-payment! (:id item)))
+    (when (= (count ids) 100)
+      (recur))))

@@ -1,8 +1,23 @@
 (ns uapatron.time
-  (:import [java.time Instant]
-           [java.time.temporal ChronoUnit]))
+  (:refer-clojure :exclude [short])
+  (:import [java.time Instant ZoneOffset]
+           [java.time.temporal ChronoUnit]
+           [java.time.format DateTimeFormatter]))
+
+(set! *warn-on-reflection* true)
 
 (defn now [] (Instant/now))
 
-(defn +days  [^Instant t ^Integer amount] (.plus t amount ChronoUnit/DAYS))
-(defn +hours [^Instant t ^Integer amount] (.plus t amount ChronoUnit/HOURS))
+
+(defn +days   [^long amount ^Instant t] (.plus t amount ChronoUnit/DAYS))
+(defn +months [^long amount ^Instant t] (.plus t amount ChronoUnit/MONTHS))
+
+
+
+(def ^DateTimeFormatter short-fmt
+  (-> (DateTimeFormatter/ofPattern "MMMM, d")
+      (.withZone ZoneOffset/UTC)))
+
+
+(defn short [t]
+  (.format short-fmt t))

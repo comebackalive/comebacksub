@@ -29,10 +29,10 @@
     nm))
 
 
-(defn json-http!
-  ([method url] (json-http! method url nil))
-  ([method url body]
-   (-> @(http/request {:method  method
+(defn post!
+  ([url] (post! url nil))
+  ([url body]
+   (-> @(http/request {:method  :post
                        :url     url
                        :headers {"Content-Type" "application/json"}
                        :body    (when body (json/encode body))
