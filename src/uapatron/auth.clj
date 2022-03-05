@@ -5,7 +5,8 @@
             [alphabase.base58 :as base58]
 
             [uapatron.config :as config]
-            [uapatron.db :as db]))
+            [uapatron.db :as db]
+            [uapatron.time :as t]))
 
 
 (set! *warn-on-reflection* true)
@@ -55,7 +56,8 @@
 
 (defn upsert-user-q [email]
   {:insert-into   :users
-   :values        [{:email email}]
+   :values        [{:email      email
+                    :updated_at (t/now)}]
    :returning     [:id :email]
    :on-conflict   [:email]
    :do-update-set [:updated_at]})

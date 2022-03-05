@@ -11,6 +11,7 @@
 
 (defn uuid [] (UUID/randomUUID))
 
+
 (def keywordize-keys clojure.walk/keywordize-keys)
 
 
@@ -47,8 +48,10 @@
 
 (defn parse-uuid
   [smth]
-  (cond (string? smth) (try (java.util.UUID/fromString smth) (catch Exception _ nil))
+  (cond (string? smth) (try (java.util.UUID/fromString smth)
+                            (catch Exception _ nil))
         (uuid? smth) smth))
+
 
 (defn parse-int [value]
   (cond

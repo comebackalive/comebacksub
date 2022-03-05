@@ -26,7 +26,6 @@
                  (filter (comp not empty? str))
                  (str/join \|))
         full-s (str (config/MERCHANT-KEY) "|" s)]
-    (log/debug "signature string" s)
     (assoc ctx :signature (sha1/sha1 full-s))))
 
 

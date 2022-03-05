@@ -1,7 +1,9 @@
 (ns uapatron.ui.payment
   (:require [uapatron.auth :as auth]
             [uapatron.ui.base :as base]
-            [uapatron.bl.fondy :as bl.fondy]))
+            [uapatron.db :as db]))
+
+;;; test cards: https://docs.fondy.eu/en/docs/page/2/
 
 
 (defn pay-button [{:keys [amount freq]}]
@@ -30,7 +32,14 @@
     [:h2 "Once a week"]
     [:div
      (pay-button {:freq "week" :amount 500})
-     (pay-button {:freq "week"})]))
+     (pay-button {:freq "week"})]
+
+    [:h2 "Your cards"]
+    [:div
+     (for [card (db/q {:from   [:cards]
+                       :select [:card_pan :created_at]
+                       :where  [:not :is_deleted]})]
+       [:div (:card_pan card) " at " (:created_at card)])]))
 
 
 (defn success-t []
