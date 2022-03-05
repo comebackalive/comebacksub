@@ -95,10 +95,8 @@
    :currency            currency
    :amount              amount
    :merchant_data       (pr-str {:recurrent true :freq frequency})
-   :required_rectoken   "Y"
    :rectoken            token
    :sender_email        user_email
-   :response_url        (str "https://" (config/DOMAIN) "/payment-result")
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
 
 
@@ -240,10 +238,6 @@
           _   (log/debug "fondy ctx" (pr-str ctx))
           res (-> (utils/post! RECURRING-URL {:request (sign ctx)})
                 :response)]
-      (prn res)
       (if (= "success" (:response_status res))
         (process-transaction! res)
         (throw (ex-info "Recurrent payment error" res))))))
-
-;; todo: fix invalid signature
-#_(process-recurrent-payment! 1)
