@@ -51,6 +51,7 @@
             :ps.frequency
             :ps.begin_charging_at
             :ps.next_payment_at
+            :ps.paused_at
             :ps.amount
             :c.token]
    :where  [:and [:= :u.id uid]
@@ -196,7 +197,10 @@
                                                (t/now)
                                                (:freq our-data))
                      :amount          (utils/parse-int amount)
-                     :currency        (db/->currency-type actual_currency)}))))))))
+                     :currency        (db/->currency-type actual_currency)})))
+          (db/q (upsert-settings-q
+                  {:user_id         (oid->uid order_id)
+                   :paused_at       nil})))))))
 
 
 (defn write-processing!
@@ -231,6 +235,17 @@
                               :begin_charging_at (t/now)})))
 
 
+(defn set-paused!
+  [uid]
+  (db/one (upsert-settings-q {:user_id   uid    
+                              :paused_at (t/now)})))
+
+
+(defn paused?
+  [settings]
+  (not (nil? (:paused_at settings))))
+
+
 (defn double-charge?
   [planned last-started]
   (if (nil? last-started) 
@@ -260,16 +275,22 @@
     (log/warn "Unknown status type: " order_status)))
 
 
-(defn process-recurrent-payment!
-  [uid]
-  (when-let [payment-params (db/one (get-ctx-for-recurrent-payment-q uid))]
-    (if (double-charge?
-          (:begin_charging_at payment-params)
-          (:next_payment_at payment-params))
+(defn process-recurrent-payment! [uid]
+  (let [payment-params (db/one (get-ctx-for-recurrent-payment-q uid))]
+    (cond
+      (not payment-params)
+      (log/info "not payment params for user" uid)
+
+      (paused? payment-params)
+      (log/info "payment is paused, for user" uid)
+
+      (double-charge? (:begin_charging_at payment-params) (:next_payment_at payment-params))
       (log/error "Double charge: " 
         {:uid         uid
          :last-charge (:begin_charging_at payment-params)
          :planned     (:next_payment_at payment-params)})
+      
+      :else
       (let [ctx (make-recurrent-payment-ctx payment-params)
             _   (log/debug "fondy ctx" (pr-str ctx))
             _   (set-begin-charging! uid)
