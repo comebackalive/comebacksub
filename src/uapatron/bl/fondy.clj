@@ -161,7 +161,7 @@
   [{:keys [amount
            actual_currency
            rectoken
-           #_rectoken_lifetime
+           rectoken_lifetime
            masked_card
            merchant_data
            order_id]
@@ -169,9 +169,10 @@
   (db/tx
     (let [card-id  (when rectoken
                      (:id (db/one (upsert-card-q
-                                    {:user_id  (oid->uid order_id)
-                                     :token    rectoken
-                                     :card_pan masked_card}))))
+                                    {:user_id          (oid->uid order_id)
+                                     :token            rectoken
+                                     :token_expires_at (t/parse-dd-MM-yyyy-HH-mm-ss rectoken_lifetime)
+                                     :card_pan         masked_card}))))
           our-data (read-string merchant_data)]
       (db/tx
         (db/q (save-transaction-q
