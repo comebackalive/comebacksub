@@ -64,7 +64,7 @@
    :order_desc          DESC
    :merchant_id         (config/MERCHANT-ID)
    :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
-   :amount              (str amount)
+   :amount              (* amount 100)
    :merchant_data       (pr-str {:freq freq})
    :required_rectoken   "Y"
    :lang                (first ["uk"
@@ -239,6 +239,11 @@
   [uid]
   (db/one (upsert-settings-q {:user_id   uid    
                               :paused_at (t/now)})))
+
+(defn set-resumed!
+  [uid]
+  (db/one (upsert-settings-q {:user_id   uid    
+                              :paused_at nil})))
 
 
 (defn paused?

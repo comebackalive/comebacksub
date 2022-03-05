@@ -60,6 +60,26 @@
                   (ui.payment/success-t))}))
 
 
+(defn pause [{:keys [request-method params] :as req}]
+  (if (not= request-method :post)
+    {:status 405
+     :body   "Method Not Allowed"}
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body    (do (bl.fondy/set-paused! (auth/uid))
+                  (ui.payment/set-paused-t))}))
+
+
+(defn resume [{:keys [request-method params] :as req}]
+  (if (not= request-method :post)
+    {:status 405
+     :body   "Method Not Allowed"}
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body    (do (bl.fondy/set-resumed! (auth/uid))
+                  (ui.payment/set-resumed-t))}))
+
+
 (defn process-login [{:keys [path-params]}]
   (if-let [email (auth/token->email (:token path-params))]
     (let [user (db/one (auth/upsert-user-q email))]

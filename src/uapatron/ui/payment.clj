@@ -22,6 +22,7 @@
             :ps.id
             :ps.next_payment_at
             :ps.frequency
+            :ps.paused_at
             :ps.amount
             :ps.currency
             :ps.created_at]
@@ -51,6 +52,7 @@
                (str amount " UAH")
                "Subscribe")]]])
 
+
 (defn ScheduleItem [item]
   [:div.card.col-4
    [:h4
@@ -63,6 +65,19 @@
     [:button {:name "id" :value (:id item)} "Pause schedule"]]])
 
 
+(defn SubscriptionPaused [item]
+  [:div.card.col-4
+   [:h4
+    (int (/ (:amount item) 100)) " "
+    (:currency item)
+    " every " (:frequency item)]
+   #_[:p "Next payment at " (t/short (:next_payment_at item))]
+   [:p "Payment is paused "]
+   [:p "From " (card-fmt (:card_pan item))]
+   [:form {:method "post" :action "/resume"}
+    [:button {:name "id" :value (:id item)} "Resume payment"]]])
+
+
 (defn Dash []
   (base/wrap
     [:h1 "Hello, " (:email (auth/user))]
@@ -72,7 +87,9 @@
        [:h2 "Your schedule"]
        [:div.row
         (for [item items]
-          (ScheduleItem item))]])
+          (if (:paused_at item)
+            (SubscriptionPaused item)
+            (ScheduleItem item)))]])
 
     (when-let [cards (seq (db/q (user-cards-q)))]
       [:section
@@ -95,3 +112,13 @@
 (defn success-t []
   (base/wrap
     [:h1 "Payment is successful, " (:email (auth/user))]))
+
+
+(defn set-paused-t []
+  (base/wrap
+    [:h1 "Subscription is paused, " (:email (auth/user))]))
+
+
+(defn set-resumed-t []
+  (base/wrap
+    [:h1 "Subscription is resumed, " (:email (auth/user))]))
