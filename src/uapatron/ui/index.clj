@@ -32,7 +32,7 @@
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (if (auth/uid)
-              (ui.payment/dash-t)
+              (ui.payment/Dash)
               (anon-t))})
 
 

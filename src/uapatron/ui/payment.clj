@@ -19,6 +19,7 @@
   {:from   [[:payment_settings :ps]]
    :join   [[:cards :c] [:= :c.id :ps.card_id]]
    :select [:c.card_pan
+            :ps.id
             :ps.next_payment_at
             :ps.frequency
             :ps.amount
@@ -37,7 +38,7 @@
 
 ;;; test cards: https://docs.fondy.eu/en/docs/page/2/
 
-(defn pay-button [{:keys [amount freq]}]
+(defn PayButton [{:keys [amount freq]}]
   [:form {:method "post"
           :action "/api/go-to-payment"
           :style  "display: inline-block"}
@@ -50,8 +51,19 @@
                (str amount " UAH")
                "Subscribe")]]])
 
+(defn ScheduleItem [item]
+  [:div.card.col-4
+   [:h4
+    (int (/ (:amount item) 100)) " "
+    (:currency item)
+    " every " (:frequency item)]
+   [:p "Next payment at " (t/short (:next_payment_at item))]
+   [:p "From " (card-fmt (:card_pan item))]
+   [:form {:method "post" :action "/pause"}
+    [:button {:name "id" :value (:id item)} "Pause schedule"]]])
 
-(defn dash-t []
+
+(defn Dash []
   (base/wrap
     [:h1 "Hello, " (:email (auth/user))]
 
@@ -60,14 +72,7 @@
        [:h2 "Your schedule"]
        [:div.row
         (for [item items]
-          [:div.card.col-4
-           [:h4
-            (int (/ (:amount item) 100)) " "
-            (:currency item)
-            " every " (:frequency item)]
-           [:p "Next payment at "
-            (t/short (:next_payment_at item))]
-           [:p "From " (card-fmt (:card_pan item))]])]])
+          (ScheduleItem item))]])
 
     (when-let [cards (seq (db/q (user-cards-q)))]
       [:section
@@ -78,13 +83,13 @@
 
     [:h2 "Once a day"]
     [:div
-     (pay-button {:freq "day" :amount 100})
-     (pay-button {:freq "day"})]
+     (PayButton {:freq "day" :amount 100})
+     (PayButton {:freq "day"})]
 
     [:h2 "Once a week"]
     [:div
-     (pay-button {:freq "week" :amount 500})
-     (pay-button {:freq "week"})]))
+     (PayButton {:freq "week" :amount 500})
+     (PayButton {:freq "week"})]))
 
 
 (defn success-t []
