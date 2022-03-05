@@ -49,6 +49,8 @@
             [:u.email :user_email]
             :ps.currency
             :ps.frequency
+            :ps.begin_charging_at
+            :ps.next_payment_at
             :ps.amount
             :c.token]
    :where  [:and [:= :u.id uid]
@@ -223,6 +225,32 @@
    :approved   process-approved!})
 
 
+(defn set-begin-charging!
+  [uid]
+  (db/one (upsert-settings-q {:user_id           uid    
+                              :begin_charging_at (t/now)})))
+
+
+(defn double-charge?
+  [planned last-started]
+  (if (nil? last-started) 
+    false ;; never charged before
+    (case (t/compare-times (t/at-midnight last-started) (t/at-midnight planned))
+      := true  
+      :> true  
+      :< false)))
+
+
+(doseq [[[planned      last-started] result]
+        {["2021-12-31" "2021-12-30"] false
+         ["2021-12-30" "2021-12-31"] true
+         ["2021-12-30" "2021-12-30"] true
+         ["2021-12-30" nil]          false}]
+  (assert (= (double-charge?
+               (t/parse-yyyy-MM-dd planned)
+               (t/parse-yyyy-MM-dd last-started)) result)))
+
+
 (defn process-transaction!
   [{:keys [order_status]
     :as   req}]
@@ -235,10 +263,18 @@
 (defn process-recurrent-payment!
   [uid]
   (when-let [payment-params (db/one (get-ctx-for-recurrent-payment-q uid))]
-    (let [ctx (make-recurrent-payment-ctx payment-params)
-          _   (log/debug "fondy ctx" (pr-str ctx))
-          res (-> (utils/post! RECURRING-URL {:request (sign ctx)})
-                :response)]
-      (if (= "success" (:response_status res))
-        (process-transaction! res)
-        (throw (ex-info "Recurrent payment error" res))))))
+    (if (double-charge?
+          (:begin_charging_at payment-params)
+          (:next_payment_at payment-params))
+      (log/error "Double charge: " 
+        {:uid         uid
+         :last-charge (:begin_charging_at payment-params)
+         :planned     (:next_payment_at payment-params)})
+      (let [ctx (make-recurrent-payment-ctx payment-params)
+            _   (log/debug "fondy ctx" (pr-str ctx))
+            _   (set-begin-charging! uid)
+            res (-> (utils/post! RECURRING-URL {:request (sign ctx)})
+                  :response)]
+        (if (= "success" (:response_status res))
+          (process-transaction! res)
+          (throw (ex-info "Recurrent payment error" res)))))))

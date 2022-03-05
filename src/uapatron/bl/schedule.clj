@@ -34,7 +34,7 @@
        :today)))
   ([which-day]
    (let [ids (db/q (uids-to-charge-q which-day))]
-     (for [item ids]
+     (doseq [item ids]
        (fondy/process-recurrent-payment! (:id item))))))
 
 
