@@ -1,0 +1,27 @@
+body {
+  font-size: 10px;
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+button {
+  display: flex;
+  flex-basis: auto;
+  justify-content: center;
+  flex-direction: row;
+  flex-grow: 1;
+  align-items: center;
+  overflow: hidden;
+  transition: all 0.2s ease, visibility 0s;
+  background: #FFFFFF;
+  color: black;
+  border: 1px solid #2B5336;
+  border-radius: 20px;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+button:hover {
+  background: #407C51;
+  border: 1px solid #000000;
+  color: white !important;
+}

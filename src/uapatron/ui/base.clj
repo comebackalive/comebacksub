@@ -14,22 +14,22 @@
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
 
      [:link {:rel "shortcut icon" :type "image/png" :href "/static/favicon.png"}]
-     [:link {:rel "stylesheet" :href "https://classless.de/classless.css"}]]))
+     [:link {:rel "stylesheet" :href "https://classless.de/classless.css"}]
+
+     [:link {:rel "stylesheet" :href "/static/main.css"}]]))
 
 
 (defn header []
-  (hi/html
-    [:nav
-     [:ul
-      [:li [:a {:href "/"} "COME BACK ALIVE"]]
-      (when (auth/uid)
-        [:li {:class "float-right"} [:a {:href "/logout"} "Logout"]])]]))
+  [:nav.header
+   [:ul
+    [:li [:a {:href "/"} "COME BACK ALIVE"]]
+    (when (auth/uid)
+      [:li {:class "float-right"} [:a {:href "/logout"} "Logout"]])]])
 
 
 (defn footer []
-  (hi/html
-    [:footer
-     [:a {:href "https://www.comebackalive.in.ua/"} "Come Back Alive"]]))
+  [:footer
+   [:a {:href "https://www.comebackalive.in.ua/"} "Come Back Alive"]])
 
 
 (defn -wrap [content]
@@ -45,4 +45,4 @@
 
 (defmacro wrap [& content]
   `(str (-wrap
-          (hi/html ~@content))))
+          ~@content)))
