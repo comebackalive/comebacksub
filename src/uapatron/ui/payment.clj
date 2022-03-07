@@ -1,8 +1,11 @@
 (ns uapatron.ui.payment
-  (:require [uapatron.auth :as auth]
+  (:require [hiccup2.core :as hi]
+
+            [uapatron.auth :as auth]
             [uapatron.ui.base :as base]
             [uapatron.db :as db]
-            [uapatron.time :as t]))
+            [uapatron.time :as t]
+            [uapatron.bl.fondy :as bl.fondy]))
 
 ;;; queries
 
@@ -15,20 +18,23 @@
             [:not :is_deleted]]})
 
 
-(defn user-schedule-q []
-  {:from   [[:payment_settings :ps]]
-   :join   [[:cards :c] [:= :c.id :ps.card_id]]
-   :select [:c.card_pan
-            :ps.id
-            :ps.next_payment_at
-            :ps.frequency
-            :ps.paused_at
-            :ps.amount
-            :ps.currency
-            :ps.created_at]
-   :where  [:and
-            [:= :ps.user_id (auth/uid)]
-            #_[:not :is_deleted]]})
+(defn user-schedule-q
+  ([] (user-schedule-q nil))
+  ([id]
+   {:from   [[:payment_settings :ps]]
+    :join   [[:cards :c] [:= :c.id :ps.card_id]]
+    :select [:c.card_pan
+             :ps.id
+             :ps.next_payment_at
+             :ps.frequency
+             :ps.paused_at
+             :ps.amount
+             :ps.currency
+             :ps.created_at]
+    :where  [:and
+             [:= :ps.user_id (auth/uid)]
+             (when id [:= :ps.id id])
+             #_[:not :is_deleted]]}))
 
 
 (defn card-fmt [s]
@@ -53,29 +59,41 @@
                "Subscribe")]]])
 
 
-(defn ScheduleItem [item]
-  [:div.card.col-4
-   [:h4
-    (int (/ (:amount item) 100)) " "
-    (:currency item)
-    " every " (:frequency item)]
-   [:p "Next payment at " (t/short (:next_payment_at item))]
-   [:p "From " (card-fmt (:card_pan item))]
-   [:form {:method "post" :action "/pause"}
-    [:button {:name "id" :value (:id item)} "Pause schedule"]]])
+(defn -ScheduleItem [item]
+  (let [paused? (boolean (:paused_at item))]
+    (hi/html
+      [:div.card.col-4
+       [:h4
+        (int (/ (:amount item) 100)) " "
+        (:currency item)
+        " every " (:frequency item)]
+       (if paused?
+         [:p "Subscription is paused"]
+         [:p "Next payment at " (t/short (:next_payment_at item))])
+       [:p "From " (card-fmt (:card_pan item))]
+       (if paused?
+         [:form {:method    "post"
+                 :action    "/payment/resume"
+                 :ts-req    ""
+                 :ts-target "parent .card"}
+          [:button {:name "id" :value (:id item)} "Resume subscription"]]
+         [:form {:method    "post"
+                 :action    "/payment/pause"
+                 :ts-req    ""
+                 :ts-target "parent .card"}
+          [:button {:name "id" :value (:id item)} "Pause subscription"]])])))
 
 
-(defn SubscriptionPaused [item]
-  [:div.card.col-4
-   [:h4
-    (int (/ (:amount item) 100)) " "
-    (:currency item)
-    " every " (:frequency item)]
-   #_[:p "Next payment at " (t/short (:next_payment_at item))]
-   [:p "Payment is paused "]
-   [:p "From " (card-fmt (:card_pan item))]
-   [:form {:method "post" :action "/resume"}
-    [:button {:name "id" :value (:id item)} "Resume payment"]]])
+(defn ScheduleItem [id]
+  (let [item (db/one (user-schedule-q id))]
+    (-ScheduleItem item)))
+
+
+(defn SomeError []
+  (hi/html
+    [:div.card.col-4
+     [:h4 "Some error happened"]
+     [:p "Please contact developers"]]))
 
 
 (defn Dash []
@@ -87,9 +105,7 @@
        [:h2 "Your schedule"]
        [:div.row
         (for [item items]
-          (if (:paused_at item)
-            (SubscriptionPaused item)
-            (ScheduleItem item)))]])
+          (-ScheduleItem item))]])
 
     (when-let [cards (seq (db/q (user-cards-q)))]
       [:section
@@ -109,16 +125,55 @@
      (PayButton {:freq "week"})]))
 
 
-(defn success-t []
+(defn PaymentSuccess []
   (base/wrap
     [:h1 "Payment is successful, " (:email (auth/user))]))
 
 
-(defn set-paused-t []
-  (base/wrap
-    [:h1 "Subscription is paused, " (:email (auth/user))]))
+;;; Handlers
+
+(defn dash [_req]
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    (if (auth/uid)
+              (Dash)
+              {:status 302
+               :headers {"Location" "/?error=unauthorized"}})})
 
 
-(defn set-resumed-t []
-  (base/wrap
-    [:h1 "Subscription is resumed, " (:email (auth/user))]))
+(defn payment-result
+  {:methods #{:post}}
+
+  [{:keys [params]}]
+
+  (bl.fondy/process-transaction! params)
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    (PaymentSuccess)})
+
+
+(defn pause
+  {:methods    #{:post}
+   :parameters {:form {:id int?}}}
+
+  [{:keys [form-params]}]
+
+  (if (bl.fondy/set-paused! (auth/uid) (:id form-params))
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body    (ScheduleItem (:id form-params))}
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body    (SomeError)}))
+
+
+(defn resume
+  {:methods    #{:post}
+   :parameters {:form {:id int?}}}
+
+  [{:keys [form-params]}]
+
+  (bl.fondy/set-resumed! (auth/uid) (:id form-params))
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    (ScheduleItem (:id form-params))})

@@ -5,6 +5,7 @@
   ring/ring-json             {:mvn/version "0.5.1"}
   ring/ring-defaults         {:mvn/version "0.3.3"}
   metosin/reitit-core        {:mvn/version "0.5.16"}
+  metosin/reitit-malli       {:mvn/version "0.5.16"}
   metosin/malli              {:mvn/version "0.8.4"}
   http-kit/http-kit          {:mvn/version "2.6.0-alpha1"}
   mount/mount                {:mvn/version "0.1.16"}

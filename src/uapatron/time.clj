@@ -13,7 +13,6 @@
 (defn +months [^long amount ^Instant t] (.plus t amount ChronoUnit/MONTHS))
 
 
-
 (def ^DateTimeFormatter short-fmt
   (-> (DateTimeFormatter/ofPattern "MMMM, d")
       (.withZone ZoneOffset/UTC)))
@@ -22,7 +21,7 @@
 (defn short [t]
   (.format short-fmt t))
 
-;;  useful formatters 
+;;  useful formatters
 (def dd-MM-yyyy-HH-mm-ss (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss"))
 (def yyyy-MM-dd (DateTimeFormatter/ofPattern "yyyy-MM-dd"))
 
@@ -39,14 +38,14 @@
 (def parse-yyyy-MM-dd (partial -parse-date yyyy-MM-dd))
 
 #_(parse-yyyy-MM-dd "2021-12-21")
- 
-(defn at-midnight
+
+(defn ^Instant at-midnight
   [^Instant t]
   (.truncatedTo t ChronoUnit/DAYS))
 
 
 (defn compare-times
-  [time-1 time-2]
+  [^Instant time-1 ^Instant time-2]
   (cond (.isBefore time-1 time-2) :<
         (.isAfter  time-1 time-2) :>
         (= time-1 time-2)         :=))

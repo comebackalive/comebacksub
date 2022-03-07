@@ -25,3 +25,33 @@ button:hover {
   border: 1px solid #000000;
   color: white !important;
 }
+
+/* loading indicator */
+
+[aria-busy] {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+@keyframes loading {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+[aria-busy]::after {
+    animation: loading 500ms infinite linear;
+    border: .1rem solid #e30a7b;
+    border-radius: 50%;
+    border-right-color: transparent;
+    border-top-color: transparent;
+    content: "";
+    display: block;
+    height: .8rem;
+    left: 50%;
+    margin-left: -.4rem;
+    margin-top: -.4rem;
+    position: absolute;
+    top: 50%;
+    width: .8rem;
+    z-index: 1;
+}

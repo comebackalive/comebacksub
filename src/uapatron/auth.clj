@@ -12,7 +12,7 @@
 (set! *warn-on-reflection* true)
 
 (def SEP 31)
-(def ^:dynamic *uid* nil)
+(def ^:dynamic *uid* :unbound)
 (def ^ThreadLocal *user (ThreadLocal.))
 
 
@@ -65,16 +65,22 @@
 
 ;; API
 
+(defmacro with-uid [uid & body]
+  `(binding [*uid* ~uid]
+     ~@body))
+
 (defn uid []
+  (when (= *uid* :unbound)
+    (throw (Exception. "auth/*uid* unbound")))
   *uid*)
 
 
 (defn user []
-  (when *uid*
+  (let [id (uid)]
     (or (.get *user)
         (do (.set *user (db/one {:from   [:users]
                                  :select [:id :email]
-                                 :where  [:= :id *uid*]}))
+                                 :where  [:= :id id]}))
             (.get *user)))))
 
 

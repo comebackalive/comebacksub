@@ -40,22 +40,22 @@
 
 (defn run-schedule []
   (let [stop (atom false)
-        t (Thread.
-            (fn []
-              (log/debug "schedule")
-              (if @stop
-                (log/info "stop")
+        t    (Thread.
+               (fn []
+                 (log/debug "schedule")
+                 (if @stop
+                   (log/info "stop")
 
-                (do
-                  (try
-                    (process-scheduled!)
-                    (catch Exception e
-                      (log/error e "cron error")))
-                  (try
-                    (Thread/sleep 300000)
-                    (catch InterruptedException _
-                      (log/info "stop")))
-                  (recur)))))]
+                   (do
+                     (try
+                       (process-scheduled!)
+                       (catch Exception e
+                         (log/error e "cron error")))
+                     (try
+                       (Thread/sleep 300000)
+                       (catch InterruptedException _
+                         (log/info "stop")))
+                     (recur)))))]
     (.start t)
     (fn []
       (reset! stop true)

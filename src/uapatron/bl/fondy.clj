@@ -1,12 +1,13 @@
 (ns uapatron.bl.fondy
   (:require [clojure.string :as str]
             [pandect.algo.sha1 :as sha1]
+            [clojure.tools.logging :as log]
+            [next.jdbc :as jdbc]
 
             [uapatron.db :as db]
             [uapatron.time :as t]
             [uapatron.config :as config]
-            [uapatron.utils :as utils]
-            [clojure.tools.logging :as log]))
+            [uapatron.utils :as utils]))
 
 
 (set! *warn-on-reflection* true)
@@ -127,6 +128,15 @@
    :do-update-set {:fields (keys settings-ctx)}})
 
 
+(defn update-settings-q
+  [ctx]
+  {:update :payment_settings
+   :set    ctx
+   :where  [:and
+           [:= :id (:id ctx)]
+           [:= :user_id (:user_id ctx)]]})
+
+
 (defn get-payment-link
   [user amount freq]
   (let [ctx (make-link-ctx user amount freq)
@@ -138,7 +148,8 @@
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))
 
-#_(println (get-payment-link {:id    "1" :email "pmapcat@gmail.com"} "1" "weekly"))
+(comment
+  (println (get-payment-link {:id "1" :email "pmapcat@gmail.com"} "1" "weekly")))
 
 (def FREQ-MAP
   {"day"   (partial t/+days 1)
@@ -174,7 +185,8 @@
                      (:id (db/one (upsert-card-q
                                     {:user_id          (oid->uid order_id)
                                      :token            rectoken
-                                     :token_expires_at (t/parse-dd-MM-yyyy-HH-mm-ss rectoken_lifetime)
+                                     :token_expires_at (when (not-empty rectoken_lifetime)
+                                                         (t/parse-dd-MM-yyyy-HH-mm-ss rectoken_lifetime))
                                      :card_pan         masked_card}))))
           our-data (read-string merchant_data)]
       (db/tx
@@ -194,8 +206,8 @@
                      :card_id         card-id
                      :frequency       (:freq our-data)
                      :next_payment_at (calculate-next-payment-at
-                                               (t/now)
-                                               (:freq our-data))
+                                        (t/now)
+                                        (:freq our-data))
                      :amount          (utils/parse-int amount)
                      :currency        (db/->currency-type actual_currency)})))
           (db/q (upsert-settings-q
@@ -230,20 +242,31 @@
 
 
 (defn set-begin-charging!
-  [uid]
-  (db/one (upsert-settings-q {:user_id           uid    
-                              :begin_charging_at (t/now)})))
+  [uid id]
+  (->> (db/one (update-settings-q {:id                id
+                                   :user_id           uid
+                                   :begin_charging_at (t/now)}))
+       ::jdbc/update-count
+       pos?))
 
 
 (defn set-paused!
-  [uid]
-  (db/one (upsert-settings-q {:user_id   uid    
-                              :paused_at (t/now)})))
+  [uid id]
+  (->> (db/one (update-settings-q {:id        id
+                                   :user_id   uid
+                                   :paused_at (t/now)}))
+       ::jdbc/update-count
+       pos?))
+
 
 (defn set-resumed!
-  [uid]
-  (db/one (upsert-settings-q {:user_id   uid    
-                              :paused_at nil})))
+  [uid id]
+  (prn uid id)
+  (->> (db/one (update-settings-q {:id        id
+                                   :user_id   uid
+                                   :paused_at nil}))
+       ::jdbc/update-count
+       pos?))
 
 
 (defn paused?
@@ -253,11 +276,11 @@
 
 (defn double-charge?
   [planned last-started]
-  (if (nil? last-started) 
+  (if (nil? last-started)
     false ;; never charged before
     (case (t/compare-times (t/at-midnight last-started) (t/at-midnight planned))
-      := true  
-      :> true  
+      := true
+      :> true
       :< false)))
 
 
@@ -273,10 +296,10 @@
 
 (defn process-transaction!
   [{:keys [order_status]
-    :as   req}]
-  (verify! req)
+    :as   params}]
+  (verify! params)
   (if-let [processor (get TRANSACT-MAPPING (keyword order_status))]
-    (processor req)
+    (processor params)
     (log/warn "Unknown status type: " order_status)))
 
 
@@ -289,16 +312,18 @@
       (paused? payment-params)
       (log/info "payment is paused, for user" uid)
 
-      (double-charge? (:begin_charging_at payment-params) (:next_payment_at payment-params))
-      (log/error "Double charge: " 
+      (double-charge?
+        (:next_payment_at payment-params)
+        (:begin_charging_at payment-params))
+      (log/error "Double charge: "
         {:uid         uid
          :last-charge (:begin_charging_at payment-params)
          :planned     (:next_payment_at payment-params)})
-      
+
       :else
       (let [ctx (make-recurrent-payment-ctx payment-params)
             _   (log/debug "fondy ctx" (pr-str ctx))
-            _   (set-begin-charging! uid)
+            _   (set-begin-charging! uid (:id payment-params))
             res (-> (utils/post! RECURRING-URL {:request (sign ctx)})
                   :response)]
         (if (= "success" (:response_status res))

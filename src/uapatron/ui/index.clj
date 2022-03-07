@@ -9,7 +9,7 @@
             [uapatron.ui.payment :as ui.payment]))
 
 
-(defn login-sent-t [{:keys [email]}]
+(defn LoginSent [{:keys [email]}]
   (base/wrap
     [:p
      "Authentication link has been sent to "
@@ -17,7 +17,7 @@
      ". Please open the link to log in - it's going to be valid for 5 minutes."]))
 
 
-(defn anon-t []
+(defn Index []
   (base/wrap
     [:form {:method "post" :action "/login"}
      [:label "Email"
@@ -28,56 +28,29 @@
 ;;; HTTP views
 
 
-(defn page [_req]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (if (auth/uid)
-              (ui.payment/Dash)
-              (anon-t))})
-
-
-(defn start-login [{:keys [request-method form-params] :as req}]
-  (if (not= request-method :post)
-    {:status 405
-     :body   "Method Not Allowed"}
-    (if-let [email (get form-params "email")]
-      (do
-        (email/email-auth! email)
-        {:status  200
-         :headers {"Content-Type" "text/html"}
-         :body    (login-sent-t {:email email})})
-      {:status  302
-       :headers {"Location" "/?error=email-empty"}})))
-
-
-(defn payment-result [{:keys [request-method params] :as req}]
-  (if (not= request-method :post)
-    {:status 405
-     :body   "Method Not Allowed"}
+(defn index [_req]
+  (if (auth/uid)
+    {:status  302
+     :headers {"Location" "/dash"}}
     {:status  200
      :headers {"Content-Type" "text/html"}
-     :body    (do (bl.fondy/process-transaction! params)
-                  (ui.payment/success-t))}))
+     :body    (Index)}))
 
 
-(defn pause [{:keys [request-method params] :as req}]
-  (if (not= request-method :post)
-    {:status 405
-     :body   "Method Not Allowed"}
-    {:status  200
-     :headers {"Content-Type" "text/html"}
-     :body    (do (bl.fondy/set-paused! (auth/uid))
-                  (ui.payment/set-paused-t))}))
+(defn start-login
+  {:methods    #{:post}
+   :parameters {:form {:email string?}}}
 
+  [{:keys [form-params]}]
 
-(defn resume [{:keys [request-method params] :as req}]
-  (if (not= request-method :post)
-    {:status 405
-     :body   "Method Not Allowed"}
-    {:status  200
-     :headers {"Content-Type" "text/html"}
-     :body    (do (bl.fondy/set-resumed! (auth/uid))
-                  (ui.payment/set-resumed-t))}))
+  (if-let [email (:email form-params)]
+    (do
+      (email/email-auth! email)
+      {:status  200
+       :headers {"Content-Type" "text/html"}
+       :body    (LoginSent {:email email})})
+    {:status  302
+     :headers {"Location" "/?error=email-empty"}}))
 
 
 (defn process-login [{:keys [path-params]}]

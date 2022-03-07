@@ -15,8 +15,8 @@
 
      [:link {:rel "shortcut icon" :type "image/png" :href "/static/favicon.png"}]
      [:link {:rel "stylesheet" :href "https://classless.de/classless.css"}]
-
-     [:link {:rel "stylesheet" :href "/static/main.css"}]]))
+     [:link {:rel "stylesheet" :href "/static/main.css"}]
+     [:script {:src "/static/twinspark.js" :async true}]]))
 
 
 (defn header []
@@ -44,5 +44,5 @@
 
 
 (defmacro wrap [& content]
-  `(str (-wrap
-          ~@content)))
+  `(-wrap
+     (hi/html ~@content)))

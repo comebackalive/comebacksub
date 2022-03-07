@@ -6,6 +6,8 @@
             [ring.middleware.session.cookie :as session-cookie]
             [ring.util.response :as response]
             [reitit.core :as reitit]
+            [reitit.coercion.malli]
+            [reitit.coercion :as coercion]
             [cheshire.generate]
             [sentry-clj.ring :as sentry]
             [mount.core :as mount]
@@ -14,10 +16,20 @@
             [uapatron.config :as config]
             [uapatron.auth :as auth]
             [uapatron.ui.index :as ui.index]
-            [uapatron.api.fondy :as api.fondy]))
+            [uapatron.ui.payment :as ui.payment]
+            [uapatron.api.fondy :as api.fondy])
+  (:import [hiccup.util RawString]))
 
 
 (set! *warn-on-reflection* true)
+
+
+(extend-protocol reitit/Expand
+  clojure.lang.Var
+  (expand [this _]
+    (let [conf (dissoc (meta this)
+                 :arglists :line :column :file :name :ns)]
+      (assoc conf :handler (deref this)))))
 
 
 (defn static [{{:keys [path]} :path-params}]
@@ -25,20 +37,25 @@
 
 
 (defn routes []
-  [["/" ui.index/page]
-   ["/login" ui.index/start-login]
-   ["/login/:token" ui.index/process-login]
-   ["/logout" ui.index/logout]
-   ["/pause" ui.index/pause]
-   ["/resume" ui.index/resume]
-   ["/payment-result" ui.index/payment-result]
-   ["/api/payment-callback" api.fondy/payment-callback]
-   ["/api/go-to-payment" api.fondy/go-to-payment]
-   ["/static/{*path}" static]])
+  [["/" #'ui.index/index]
+   ["/dash" #'ui.payment/dash]
+   ["/login" #'ui.index/start-login]
+   ["/login/:token" #'ui.index/process-login]
+   ["/logout" #'ui.index/logout]
+   ["/payment/pause" #'ui.payment/pause]
+   ["/payment/resume" #'ui.payment/resume]
+   ["/payment-result" #'ui.payment/payment-result]
+   ["/api/payment-callback" #'api.fondy/payment-callback]
+   ["/api/go-to-payment" #'api.fondy/go-to-payment]
+   ["/static/{*path}" #'static]])
 
 
-(def dev-router #(reitit/router (routes)))
-(def prod-router (reitit/router (routes)))
+(def dev-router #(reitit/router (routes)
+                   {:data    {:coercion reitit.coercion.malli/coercion}
+                    :compile coercion/compile-request-coercers}))
+(def prod-router (reitit/router (routes)
+                   {:data    {:coercion reitit.coercion.malli/coercion}
+                    :compile coercion/compile-request-coercers}))
 
 
 (defn maybe-redirect [router req]
@@ -49,21 +66,6 @@
     (when (reitit/match-by-path router uri)
       {:status  (if (= (:request-method req) :get) 301 308)
        :headers {"Location" uri}})))
-
-
-(defn -app [req]
-  (let [router   (if (config/DEV)
-                   (dev-router)
-                   prod-router)
-        m        (reitit/match-by-path router (:uri req))
-        redirect (when-not m
-                   (maybe-redirect router req))]
-    (cond
-      m        ((:result m) (assoc req :path-params (:path-params m)))
-      redirect redirect
-      :else    (do (log/info "unknown request" req)
-                   {:status 404
-                    :body   "Not Found"}))))
 
 
 (defn access-log [handler]
@@ -77,8 +79,61 @@
         (throw e)))))
 
 
+(defn -app [req]
+  (let [method   (:request-method req)
+        data     (-> req :match :data)
+        handler  (:handler data)
+        methods  (:methods data)
+        redirect (when-not (:match req)
+                   (maybe-redirect (:router req) req))]
+    (cond
+      (and methods
+           (not (contains? methods method))) {:status 405
+                                              :body   "Method Not Allowed"}
+      handler                                (handler req)
+      redirect                               redirect
+      :else                                  {:status 404
+                                              :body   "Not Found"})))
+
+
+(defn coerce [handler]
+  (fn [req]
+    (let [m       (:match req)
+          coerced (coercion/coerce-request (:result m) req)
+          data    (into {} (for [[k v] coerced]
+                             (case k
+                               :form      [:form-params v]
+                               :query     [:query-params v]
+                               :path      [:path-params v]
+                               :multipart [:multipart-params v])))]
+      (handler (merge req data)))))
+
+
+(defn reitit-route [handler]
+  (fn [req]
+    (let [router (if (config/DEV)
+                     (dev-router)
+                     prod-router)
+          m      (reitit/match-by-path router (:uri req))]
+      (handler (assoc req
+                 :match m
+                 :path-params (:path-params m)
+                 :router router)))))
+
+
+(defn render-html [handler]
+  (fn [req]
+    (let [res (handler req)]
+      (if (instance? RawString (:body res))
+        (update res :body str)
+        res))))
+
+
 (defn make-app []
   (-> -app
+      (render-html)
+      (coerce)
+      (reitit-route)
       (access-log)
       (auth/wrap-auth)
       (json/wrap-json-response)
