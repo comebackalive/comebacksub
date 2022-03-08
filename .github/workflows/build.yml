@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # so we can count revs in build.clj
     - uses: actions/cache@v2.1.7
       with:
         path: ~/.m2
