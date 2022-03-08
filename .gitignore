@@ -1,10 +1,8 @@
-/.tokens/
 /target/
 /classes/
-/piu
 /.cpcache/
 /.cache/
 /.nrepl-port
-/piu.sqlite
 /.clj-kondo/.cache
 /.config.mk
+/VERSION

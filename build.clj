@@ -1,18 +1,12 @@
 (ns build
-  (:import [java.time LocalTime])
   (:require [clojure.tools.build.api :as b]
             [clojure.java.io :as io]))
 
 
-(defn minutes-today []
-  (-> (LocalTime/now) .toSecondOfDay (/ 60) int))
-
-
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
-(def version (format "1.%s-%s" (b/git-count-revs nil) (minutes-today)))
-;; (def uber-file (format "target/uapatron-%s.jar" version))
-(def uber-file "target/uapatron.jar")
+(def version (format "1.%s" (b/git-count-revs nil)))
+(def uber-file (format "target/uapatron-%s.jar" version))
 
 
 (defn clean [_]
