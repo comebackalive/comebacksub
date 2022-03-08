@@ -17,7 +17,7 @@
      ". Please open the link to log in - it's going to be valid for 5 minutes."]))
 
 
-(defn Index []
+(defn IndexPage []
   (base/wrap
     [:form {:method "post" :action "/login"}
      [:label "Email"
@@ -34,7 +34,7 @@
      :headers {"Location" "/dash"}}
     {:status  200
      :headers {"Content-Type" "text/html"}
-     :body    (Index)}))
+     :body    (IndexPage)}))
 
 
 (defn start-login

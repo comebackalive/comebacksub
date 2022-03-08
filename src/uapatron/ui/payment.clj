@@ -96,7 +96,7 @@
      [:p "Please contact developers"]]))
 
 
-(defn Dash []
+(defn DashPage []
   (base/wrap
     [:h1 "Hello, " (:email (auth/user))]
 
@@ -136,7 +136,7 @@
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (if (auth/uid)
-              (Dash)
+              (DashPage)
               {:status 302
                :headers {"Location" "/?error=unauthorized"}})})
 

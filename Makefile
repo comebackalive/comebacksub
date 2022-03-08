@@ -14,3 +14,6 @@ upgrade:
 
 uber:
 	clojure -Srepro -T:build uber
+
+clean:
+	rm -rf target

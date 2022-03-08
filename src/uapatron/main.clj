@@ -8,15 +8,21 @@
             [uapatron.httpd]
             [uapatron.bl.schedule]
             [uapatron.db]
-            [uapatron.config :as config]))
+            [uapatron.config :as config]
+            [clojure.java.io :as io]))
 
 
 (set! *warn-on-reflection* true)
 (alter-var-root #'http/*default-client* (fn [_] sni-client/default-client))
 
 
+(def VERSION
+  (or (some-> (io/resource "VERSION") slurp)
+      "dev"))
+
+
 (when (seq (config/SENTRY))
-  (sentry/init! (config/SENTRY)))
+  (sentry/init! (config/SENTRY) {:release VERSION}))
 
 
 (mount/defstate schedule
@@ -25,4 +31,6 @@
 
 
 (defn -main [& args]
-  (mount/start))
+  (case (first args)
+    nil  (mount/start)
+    "-V" (println "uapatron" VERSION)))
