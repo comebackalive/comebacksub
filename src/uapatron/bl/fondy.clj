@@ -92,7 +92,7 @@
                                 "hu"
                                 "de"])
    :sender_email        (:email user)
-   :response_url        (str "https://" (config/DOMAIN) "/payment-result")
+   :response_url        (str "https://" (config/DOMAIN) "/payment/result")
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
 
 

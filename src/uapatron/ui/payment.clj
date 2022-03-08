@@ -5,7 +5,8 @@
             [uapatron.ui.base :as base]
             [uapatron.db :as db]
             [uapatron.time :as t]
-            [uapatron.bl.fondy :as bl.fondy]))
+            [uapatron.bl.fondy :as bl.fondy]
+            [uapatron.utils :as utils]))
 
 ;;; queries
 
@@ -137,19 +138,16 @@
    :headers {"Content-Type" "text/html"}
    :body    (if (auth/uid)
               (DashPage)
-              {:status 302
-               :headers {"Location" "/?error=unauthorized"}})})
+              (utils/msg-redir "unauthenticated"))})
 
 
-(defn payment-result
+(defn result
   {:methods #{:post}}
 
   [{:keys [params]}]
 
   (bl.fondy/process-transaction! params)
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (PaymentSuccess)})
+  (utils/msg-redir "/dash" "successful-payment"))
 
 
 (defn pause

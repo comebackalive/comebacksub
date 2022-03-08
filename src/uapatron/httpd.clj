@@ -17,7 +17,8 @@
             [uapatron.auth :as auth]
             [uapatron.ui.index :as ui.index]
             [uapatron.ui.payment :as ui.payment]
-            [uapatron.api.fondy :as api.fondy])
+            [uapatron.api.fondy :as api.fondy]
+            [uapatron.ui.message :as message])
   (:import [hiccup.util RawString]))
 
 
@@ -44,7 +45,7 @@
    ["/logout" #'ui.index/logout]
    ["/payment/pause" #'ui.payment/pause]
    ["/payment/resume" #'ui.payment/resume]
-   ["/payment-result" #'ui.payment/payment-result]
+   ["/payment/result" #'ui.payment/result]
    ["/api/payment-callback" #'api.fondy/payment-callback]
    ["/api/go-to-payment" #'api.fondy/go-to-payment]
    ["/static/{*path}" #'static]])
@@ -134,6 +135,7 @@
       (render-html)
       (coerce)
       (reitit-route)
+      (message/message-mw)
       (access-log)
       (auth/wrap-auth)
       (json/wrap-json-response)

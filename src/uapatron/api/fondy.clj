@@ -27,10 +27,10 @@
                        {:error e}))]
     (cond
       (not (auth/user))
-      (utils/err-redir "unauthenticated")
+      (utils/msg-redir "unauthenticated")
 
       (not (and freq amount))
-      (utils/err-redir "no-data")
+      (utils/msg-redir "no-data")
 
       (:error link)
       {:status  200

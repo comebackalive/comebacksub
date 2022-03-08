@@ -41,9 +41,11 @@
        (json/parse-string true))))
 
 
-(defn err-redir [errname]
-  {:status  302
-   :headers {"Location" (str "/?error=" errname)}})
+(defn msg-redir
+  ([message] (msg-redir "/" message))
+  ([url message]
+   {:status  302
+    :headers {"Location" (str url "?message=" message)}}))
 
 
 (defn parse-uuid

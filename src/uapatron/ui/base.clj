@@ -1,7 +1,9 @@
 (ns uapatron.ui.base
   (:require [hiccup2.core :as hi]
             [hiccup.page :refer [doctype]]
-            [uapatron.auth :as auth]))
+
+            [uapatron.auth :as auth]
+            [uapatron.ui.message :as message]))
 
 (set! *warn-on-reflection* true)
 
@@ -20,16 +22,20 @@
 
 
 (defn header []
-  [:nav.header
-   [:ul
-    [:li [:a {:href "/"} "COME BACK ALIVE"]]
-    (when (auth/uid)
-      [:li {:class "float-right"} [:a {:href "/logout"} "Logout"]])]])
+  (hi/html
+    [:header
+     [:nav.header
+      [:ul
+       [:li [:a {:href "/"} "COME BACK ALIVE"]]
+       (when (auth/uid)
+         [:li {:class "float-right"} [:a {:href "/logout"} "Logout"]])]]
+     (message/Messages)]))
 
 
 (defn footer []
-  [:footer
-   [:a {:href "https://www.comebackalive.in.ua/"} "Come Back Alive"]])
+  (hi/html
+    [:footer
+     [:a {:href "https://www.comebackalive.in.ua/"} "Come Back Alive"]]))
 
 
 (defn -wrap [content]
