@@ -39,6 +39,5 @@
 
 (def TIMEOUT (constantly 3000))
 
-
-;; (def SENTRY   #(get-env "SENTRY"
-;;                  "Sentry DSN"))
+(def SENTRY   #(get-env "SENTRY" ""
+                 "Sentry DSN"))
