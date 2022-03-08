@@ -22,7 +22,7 @@
   (blet [freq   (:freq form-params)
          amount (:amount form-params)
          ;; TODO: process exception here (maybe rework exception to Option)
-         link   (try (bl.fondy/get-payment-link (auth/user) amount freq)
+         link   (try (bl.fondy/get-payment-link (auth/user) (* amount 100) freq)
                      (catch Exception e
                        {:error e}))]
     (cond

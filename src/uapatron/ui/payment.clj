@@ -51,7 +51,7 @@
           :style  "display: inline-block"}
    [:fieldset
     [:input (if amount
-              {:type "hidden" :name "amount" :value (* 100 amount)}
+              {:type "hidden" :name "amount" :value amount}
               {:type "text" :name "amount" :placeholder "Your sum"})]
     [:input {:type "hidden" :name "freq" :value freq}]
     [:button (if amount
