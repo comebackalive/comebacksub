@@ -25,15 +25,18 @@
 (def dd-MM-yyyy-HH-mm-ss (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss"))
 (def yyyy-MM-dd (DateTimeFormatter/ofPattern "yyyy-MM-dd"))
 
-(defn -parse-time [fmt smth]
-  (when (string? smth) (.toInstant (LocalDateTime/parse smth  fmt) ZoneOffset/UTC)))
+(defn -parse-time [fmt value]
+  (when value
+    (.toInstant (LocalDateTime/parse value fmt) ZoneOffset/UTC)))
 
-(defn -parse-date [fmt smth]
-  (when (string? smth) (.toInstant (.atStartOfDay (LocalDate/parse smth fmt)) ZoneOffset/UTC)))
+(defn -parse-date [fmt value]
+  (when value
+    (.toInstant (.atStartOfDay (LocalDate/parse value fmt)) ZoneOffset/UTC)))
 
 
-(def parse-dd-MM-yyyy-HH-mm-ss (partial -parse-time dd-MM-yyyy-HH-mm-ss))
-#_(parse-dd-MM-yyyy-HH-mm-ss "01.04.2022 00:00:00")
+(def parse-dt (partial -parse-time dd-MM-yyyy-HH-mm-ss))
+(comment
+  (parse-dt "01.04.2022 00:00:00"))
 
 (def parse-yyyy-MM-dd (partial -parse-date yyyy-MM-dd))
 

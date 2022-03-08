@@ -7,7 +7,8 @@
             [uapatron.db :as db]
             [uapatron.time :as t]
             [uapatron.config :as config]
-            [uapatron.utils :as utils]))
+            [uapatron.utils :as utils]
+            [clojure.edn :as edn]))
 
 
 (set! *warn-on-reflection* true)
@@ -36,9 +37,17 @@
     (throw (ex-info "Bad signature, check credentials" ctx))))
 
 
-(defn make-order-id [uid] (str uid ":" (utils/uuid)))
-(defn oid->uid [order-id] (utils/parse-int (first  (str/split order-id #":"))))
-(defn oid->tx  [order-id] (utils/parse-uuid (second (str/split order-id #":"))))
+(defn make-order-id [] (utils/uuid))
+
+
+(defn make-desc
+  ([freq amount currency] (make-desc freq amount currency nil))
+  ([freq amount currency recurrent]
+   (let [amount (/ amount 100)
+         fmt (if recurrent
+               "Donation to Come Back Alive (%s %s %sly) - regular payment"
+               "Donation to Come Back Alive (%s %s %sly)")]
+     (format fmt amount currency freq))))
 
 
 (defn get-ctx-for-recurrent-payment-q
@@ -61,12 +70,13 @@
 
 (defn make-link-ctx
   [user amount freq]
-  {:order_id            (make-order-id (:id user))
-   :order_desc          DESC
+  {:order_id            (make-order-id)
+   :order_desc          (make-desc freq amount "UAH")
    :merchant_id         (config/MERCHANT-ID)
    :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
-   :amount              (* amount 100)
-   :merchant_data       (pr-str {:freq freq})
+   :amount              amount
+   :merchant_data       (pr-str {:user_id (:id user)
+                                 :freq freq})
    :required_rectoken   "Y"
    :lang                (first ["uk"
                                 "en"
@@ -87,18 +97,22 @@
 
 
 (defn make-recurrent-payment-ctx
-  [{:keys [user_id
+  [{:keys [id
+           user_id
            user_email
            currency
            frequency
            amount
            token]}]
-  {:order_id            (make-order-id user_id)
-   :order_desc          DESC-RECUR
+  {:order_id            (make-order-id)
+   :order_desc          (make-desc amount currency frequency true)
    :merchant_id         (config/MERCHANT-ID)
    :currency            currency
    :amount              amount
-   :merchant_data       (pr-str {:recurrent true :freq frequency})
+   :merchant_data       (pr-str {:user_id   user_id
+                                 :freq      frequency
+                                 :id        id
+                                 :recurrent true})
    :rectoken            token
    :sender_email        user_email
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
@@ -112,11 +126,11 @@
 
 
 (defn upsert-card-q
-  [card-ctx]
+  [card]
   {:insert-into   :cards
-   :values        [card-ctx]
+   :values        [card]
    :on-conflict   [:user_id :card_pan]
-   :do-update-set (into [] (keys card-ctx))
+   :do-update-set (keys card)
    :returning     [:id]})
 
 
@@ -125,7 +139,7 @@
   {:insert-into   :payment_settings
    :values        [settings-ctx]
    :on-conflict   [:user_id]
-   :do-update-set {:fields (keys settings-ctx)}})
+   :do-update-set (keys settings-ctx)})
 
 
 (defn update-settings-q
@@ -133,8 +147,8 @@
   {:update :payment_settings
    :set    ctx
    :where  [:and
-           [:= :id (:id ctx)]
-           [:= :user_id (:user_id ctx)]]})
+            [:= :id (:id ctx)]
+            [:= :user_id (:user_id ctx)]]})
 
 
 (defn get-payment-link
@@ -148,8 +162,10 @@
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))
 
+
 (comment
   (println (get-payment-link {:id "1" :email "pmapcat@gmail.com"} "1" "weekly")))
+
 
 (def FREQ-MAP
   {"day"   (partial t/+days 1)
@@ -168,7 +184,7 @@
   (db/one {:from   [:transaction_log]
            :select [1]
            :where  [:and [:= :type (db/->transaction-type status)]
-                    [:= :transaction (oid->tx order-id)]]}))
+                    [:= :transaction order-id]]}))
 
 
 (defn process-approved!
@@ -180,65 +196,67 @@
            merchant_data
            order_id]
     :as   resp}]
-  (db/tx
-    (let [card-id  (when rectoken
-                     (:id (db/one (upsert-card-q
-                                    {:user_id          (oid->uid order_id)
-                                     :token            rectoken
-                                     :token_expires_at (when (not-empty rectoken_lifetime)
-                                                         (t/parse-dd-MM-yyyy-HH-mm-ss rectoken_lifetime))
-                                     :card_pan         masked_card}))))
-          our-data (read-string merchant_data)]
-      (db/tx
-        (db/q (save-transaction-q
-                {:transaction (utils/parse-uuid (oid->tx order_id))
-                 :amount      (utils/parse-int amount)
-                 :order_id    order_id
-                 :card_id     card-id
-                 :user_id     (oid->uid order_id)
-                 :type        (db/->transaction-type :Approved)
-                 :currency    (db/->currency-type actual_currency)
-                 :data        (db/as-jsonb resp)}))
-        (when rectoken
-          (db/q (upsert-settings-q
-                  (utils/remove-nils
-                    {:user_id         (oid->uid order_id)
-                     :card_id         card-id
-                     :frequency       (:freq our-data)
-                     :next_payment_at (calculate-next-payment-at
-                                        (t/now)
-                                        (:freq our-data))
-                     :amount          (utils/parse-int amount)
-                     :currency        (db/->currency-type actual_currency)})))
-          (db/q (upsert-settings-q
-                  {:user_id         (oid->uid order_id)
-                   :paused_at       nil})))))))
+  (let [payload (edn/read-string merchant_data)
+        card    {:user_id          (:user_id payload)
+                 :token            rectoken
+                 :token_expires_at (when (not-empty rectoken_lifetime)
+                                     (t/parse-dt rectoken_lifetime))
+                 :card_pan         masked_card}]
+    (db/tx
+      (let [card-id  (when rectoken
+                       (:id (db/one (upsert-card-q card))))
+            settings {:user_id         (:user_id payload)
+                      :card_id         card-id
+                      :frequency       (:freq payload)
+                      :next_payment_at (calculate-next-payment-at
+                                         (t/now)
+                                         (:freq payload))
+                      :paused_at       nil
+                      :amount          (utils/parse-int amount)
+                      :currency        (db/->currency-type actual_currency)}]
+        (db/tx
+          (db/q (save-transaction-q
+                  {:transaction (utils/parse-uuid order_id)
+                   :amount      (utils/parse-int amount)
+                   :order_id    order_id
+                   :card_id     card-id
+                   :user_id     (:user_id payload)
+                   :type        (db/->transaction-type :Approved)
+                   :currency    (db/->currency-type actual_currency)
+                   :data        (db/as-jsonb resp)}))
+          (when card-id
+            (if (:id payload)
+              (db/one (update-settings-q (assoc settings :id (:id payload))))
+              ;; we're allowing only one schedule per user right now
+              (db/one (upsert-settings-q settings)))))))))
 
 
 (defn write-processing!
   [status {:keys [amount
                   actual_currency
-                  order_id]
+                  order_id
+                  merchant_data]
            :as   resp}]
-  (db/q (save-transaction-q
-          {:transaction (utils/parse-uuid (oid->tx order_id))
-           :amount      (when-not (empty? amount)
-                          (utils/parse-int amount))
-           :order_id    order_id
-           :user_id     (oid->uid order_id)
-           :type        (db/->transaction-type status)
-           :currency    (when-not (empty? actual_currency)
-                          (db/->currency-type actual_currency))
-           :data        (db/as-jsonb resp)})))
+  (let [payload (edn/read-string merchant_data)]
+    (db/q (save-transaction-q
+            {:transaction (utils/parse-uuid order_id)
+             :amount      (when-not (empty? amount)
+                            (utils/parse-int amount))
+             :order_id    order_id
+             :user_id     (:user_id payload)
+             :type        (db/->transaction-type status)
+             :currency    (when-not (empty? actual_currency)
+                            (db/->currency-type actual_currency))
+             :data        (db/as-jsonb resp)}))))
 
 
 (def TRANSACT-MAPPING
-  {:created    (partial write-processing! :Created)
-   :processing (partial write-processing! :InProcessing)
-   :declined   (partial write-processing! :Declined)
-   :reversed   (partial write-processing! :Voided)
-   :expired    (partial write-processing! :Expired)
-   :approved   process-approved!})
+  {"created"    (partial write-processing! :Created)
+   "processing" (partial write-processing! :InProcessing)
+   "declined"   (partial write-processing! :Declined)
+   "reversed"   (partial write-processing! :Voided)
+   "expired"    (partial write-processing! :Expired)
+   "approved"   process-approved!})
 
 
 (defn set-begin-charging!
@@ -298,9 +316,8 @@
   [{:keys [order_status]
     :as   params}]
   (verify! params)
-  (if-let [processor (get TRANSACT-MAPPING (keyword order_status))]
-    (processor params)
-    (log/warn "Unknown status type: " order_status)))
+  (let [processor (get TRANSACT-MAPPING order_status)]
+    (processor params)))
 
 
 (defn process-recurrent-payment! [uid]

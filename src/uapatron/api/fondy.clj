@@ -7,15 +7,20 @@
 
 
 (defn payment-callback [_req]
+  (bl.fondy/process-transaction! (:body _req))
   {:status  200
    :headers {"Content-Type" "application/json"}
-   :body    {:message (do (bl.fondy/process-transaction! (:body _req))
-                          "ok")}})
+   :body    {:message "ok"}})
 
 
-(defn go-to-payment [{:keys [form-params]}]
-  (blet [freq   (get form-params "freq")
-         amount (utils/parse-int (get form-params "amount"))
+(defn go-to-payment
+  {:parameters {:form {:freq   string?
+                       :amount int?}}}
+
+  [{:keys [form-params]}]
+
+  (blet [freq   (:freq form-params)
+         amount (:amount form-params)
          ;; TODO: process exception here (maybe rework exception to Option)
          link   (try (bl.fondy/get-payment-link (auth/user) amount freq)
                      (catch Exception e
