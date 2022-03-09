@@ -50,7 +50,7 @@
      (format fmt amount currency freq))))
 
 
-(defn get-ctx-for-recurrent-payment-q
+(defn recurrent-payment-q
   [uid]
   {:from   [[:users :u]]
    :join   [[:payment_settings :ps] [:= :ps.user_id :u.id]
@@ -105,7 +105,7 @@
            amount
            token]}]
   {:order_id            (make-order-id)
-   :order_desc          (make-desc amount currency frequency true)
+   :order_desc          (make-desc frequency amount currency true)
    :merchant_id         (config/MERCHANT-ID)
    :currency            currency
    :amount              amount
@@ -321,7 +321,7 @@
 
 
 (defn process-recurrent-payment! [uid]
-  (let [payment-params (db/one (get-ctx-for-recurrent-payment-q uid))]
+  (let [payment-params (db/one (recurrent-payment-q uid))]
     (cond
       (not payment-params)
       (log/info "not payment params for user" uid)
