@@ -4,6 +4,7 @@
             cemerick.pomegranate
             cemerick.pomegranate.aether
             [clojure.tools.namespace.repl :as tn]
+            [kasta.i18n]
 
             [uapatron.main]))
 
@@ -26,11 +27,22 @@
               res)))))))
 
 
+(defn update-i18n! []
+  (kasta.i18n/update-codebase! ["src"] "resources/i18n/uk.po"))
+
+
+(defn reload-trans! []
+  (swap! kasta.i18n/TRANSLATIONS empty))
+
+
 (defn add-dep [dep]
   (cemerick.pomegranate/add-dependencies
     :coordinates  [dep]
     :repositories (merge cemerick.pomegranate.aether/maven-central
                     {"clojars" "https://clojars.org/repo"})))
 
+
 (comment
+  (update-i18n!)
+  (reload-trans!)
   (add-dep '[com.clojure-goes-fast/clj-async-profiler "0.5.1"]))

@@ -12,6 +12,7 @@
             [sentry-clj.ring :as sentry]
             [mount.core :as mount]
             [org.httpkit.server :as httpd]
+            [kasta.i18n]
 
             [uapatron.config :as config]
             [uapatron.auth :as auth]
@@ -130,9 +131,18 @@
         res))))
 
 
+(defn i18n-mw [handler]
+  (fn [req]
+    (let [lang (or (#{"en" "uk"} (get-in req [:cookies "lang"]))
+                   "en")]
+      (kasta.i18n/with-lang lang
+        (handler req)))))
+
+
 (defn make-app []
   (-> -app
       (render-html)
+      (i18n-mw)
       (coerce)
       (reitit-route)
       (message/message-mw)

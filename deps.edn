@@ -15,12 +15,13 @@
   mvxcvi/alphabase           {:mvn/version "2.1.1"}
   pandect/pandect            {:mvn/version "1.0.2"}
   github.akovantsev/blet     {:git/url "https://github.com/akovantsev/blet"
-                              :sha     "5aca99d960406878bae5680e4e672a5084adfc6b"}
+                              :sha     "2efe35f8e6ba7be81518f63fa6785d76e0ae61a4"}
+  ua.kasta/i18n              {:mvn/version "1.0.13"}
 
   ;; logging
   io.sentry/sentry-clj           {:mvn/version "5.6.170"}
   org.slf4j/slf4j-api            {:mvn/version "1.7.36"}
-  ch.qos.logback/logback-classic {:mvn/version "1.2.10"}
+  ch.qos.logback/logback-classic {:mvn/version "1.2.11"}
   org.clojure/tools.logging      {:mvn/version "1.2.4"}
 
   ;; db
@@ -33,7 +34,7 @@
  :aliases
  {:dev {:extra-deps {nrepl/nrepl                              {:mvn/version "0.9.0"}
                      cider/cider-nrepl                        {:mvn/version "0.28.3"}
-                     refactor-nrepl/refactor-nrepl            {:mvn/version "3.3.2"}
+                     refactor-nrepl/refactor-nrepl            {:mvn/version "3.4.1"}
                      clj-commons/pomegranate                  {:mvn/version "1.2.1"}
                      com.clojure-goes-fast/clj-async-profiler {:mvn/version "0.5.1"}
                      org.clojure/tools.namespace              {:mvn/version "1.2.0"}}
