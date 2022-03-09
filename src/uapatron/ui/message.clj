@@ -27,5 +27,5 @@
 (defn Messages []
   (hi/html
     (for [message *messages*]
-      [:p (get MESSAGES message message)])))
+      [:p.message (get MESSAGES message message)])))
 

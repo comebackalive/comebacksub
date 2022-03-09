@@ -7,6 +7,11 @@
 
 (set! *warn-on-reflection* true)
 
+(def SOCIAL
+  [["facebook.com" "f.png" "https://www.facebook.com/backandalive"]
+   ["twitter.com" "t.png" "https://twitter.com/BackAndAlive"]
+   ["instagram.com" "i.png" "https://www.instagram.com/savelife.in.ua/"]
+   ["tiktok.com" "tk.png" "https://vm.tiktok.com/ZMeJ7ffef/"]])
 
 (defn head []
   (hi/html
@@ -16,26 +21,44 @@
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
 
      [:link {:rel "shortcut icon" :type "image/png" :href "/static/favicon.png"}]
-     [:link {:rel "stylesheet" :href "https://classless.de/classless.css"}]
+     [:link {:rel "stylesheet" :href "https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"}]
+     [:link {:rel "stylesheet" :href "https://fonts.googleapis.com/css?family=Roboto"}]
      [:link {:rel "stylesheet" :href "/static/main.css"}]
      [:script {:src "/static/twinspark.js" :async true}]]))
 
 
 (defn header []
   (hi/html
-    [:header
-     [:nav.header
-      [:ul
-       [:li [:a {:href "/"} "COME BACK ALIVE"]]
-       (when (auth/uid)
-         [:li {:class "float-right"} [:a {:href "/logout"} "Logout"]])]]
+    [:header.header
+     [:div.container
+      [:nav
+       [:ul
+        [:li
+         [:a.header__logo {:href "/" :title "COME BACK ALIVE"}
+          [:img {:src "/static/img/logo.png"}]]]
+        (when (auth/uid)
+          [:li.header__logout [:a {:href "/logout"} "Logout"]])]]]
      (message/Messages)]))
 
 
 (defn footer []
   (hi/html
     [:footer
-     [:a {:href "https://www.comebackalive.in.ua/"} "Come Back Alive"]]))
+     [:div.container
+      [:div.footer__inner
+       [:div.footer__copy
+        [:div
+         [:span "©2022 by "]
+         [:a {:href "http://savelife.in.ua/" :target "_blank"} "www.savelife.in.ua"]
+         [:span " NGO"]]]
+       [:div.footer__social
+        [:p "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."]
+        [:ul.footer__icons
+         (for [[title img link] SOCIAL]
+           [:li [:a {:href link :target "_blank"}
+                 [:img {:title title
+                        :src   (str "/static/img/" img)}]]])]]]]
+     #_[:a {:href "https://www.comebackalive.in.ua/"} "Come Back Alive"]]))
 
 
 (defn -wrap [content]
@@ -45,7 +68,8 @@
      (head)
      [:body
       (header)
-      [:main content]
+      [:main
+       [:div.container content]]
       (footer)]]))
 
 
