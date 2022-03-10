@@ -75,12 +75,16 @@
   *uid*)
 
 
+(defn get-user [id]
+  (db/one {:from   [:users]
+           :select [:id :email]
+           :where  [:= :id id]}))
+
+
 (defn user []
   (let [id (uid)]
     (or (.get *user)
-        (do (.set *user (db/one {:from   [:users]
-                                 :select [:id :email]
-                                 :where  [:= :id id]}))
+        (do (.set *user (get-user id))
             (.get *user)))))
 
 

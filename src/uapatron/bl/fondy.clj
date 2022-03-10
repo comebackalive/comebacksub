@@ -8,7 +8,9 @@
             [uapatron.time :as t]
             [uapatron.config :as config]
             [uapatron.utils :as utils]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [uapatron.email :as email]
+            [uapatron.auth :as auth]))
 
 
 (set! *warn-on-reflection* true)
@@ -196,21 +198,22 @@
            merchant_data
            order_id]
     :as   resp}]
-  (let [payload (edn/read-string merchant_data)
-        card    {:user_id          (:user_id payload)
-                 :token            rectoken
-                 :token_expires_at (when (not-empty rectoken_lifetime)
-                                     (t/parse-dt rectoken_lifetime))
-                 :card_pan         masked_card}]
+  (let [payload         (edn/read-string merchant_data)
+        card            {:user_id          (:user_id payload)
+                         :token            rectoken
+                         :token_expires_at (when (not-empty rectoken_lifetime)
+                                             (t/parse-dt rectoken_lifetime))
+                         :card_pan         masked_card}
+        next-payment-at (calculate-next-payment-at
+                          (t/now)
+                          (:freq payload))]
     (db/tx
       (let [card-id  (when rectoken
                        (:id (db/one (upsert-card-q card))))
             settings {:user_id         (:user_id payload)
                       :card_id         card-id
                       :frequency       (:freq payload)
-                      :next_payment_at (calculate-next-payment-at
-                                         (t/now)
-                                         (:freq payload))
+                      :next_payment_at next-payment-at
                       :paused_at       nil
                       :amount          (utils/parse-int amount)
                       :currency        (db/->currency-type actual_currency)}]
@@ -228,7 +231,11 @@
             (if (:id payload)
               (db/one (update-settings-q (assoc settings :id (:id payload))))
               ;; we're allowing only one schedule per user right now
-              (db/one (upsert-settings-q settings)))))))))
+              (db/one (upsert-settings-q settings)))))
+        (email/receipt! (:email (auth/get-user (:user_id payload)))
+          {:amount          (utils/parse-int amount)
+           :currency        actual_currency
+           :next_payment_at next-payment-at})))))
 
 
 (defn write-processing!

@@ -40,7 +40,7 @@
 (def DOMAIN   #(get-env "DOMAIN" "sanya.ngrok.io"
                  "DOMAIN env var is empty, please set to site domain"))
 (def SECRET   #(get-env "SECRET" "SECRET key to sign session cookies and other"))
-(def POSTMARK #(get-env "POSTMARK" "POSTMARK api key to send emails"))
+(def POSTMARK #(get-env "POSTMARK" "Postmark API key"))
 (def MERCHANT-ID #(get-env "MERCHANTID" "Fondy merchant id"))
 (def MERCHANT-KEY #(get-env "MERCHANTKEY" "Fondy merchant pass"))
 

@@ -5,30 +5,43 @@
             [uapatron.auth :as auth]))
 
 
-(defn send! [to subj text]
+(defn send! [{:keys [to template data]}]
   @(http/request
      {:method  :post
-      :url     "https://api.postmarkapp.com/email"
+      :url     "https://api.postmarkapp.com/email/withTemplate"
       :headers {"Accept"                  "application/json"
                 "Content-Type"            "application/json"
                 "X-Postmark-Server-Token" (config/POSTMARK)}
       :body    (json/generate-string
-                 {:From          "o.solovyov@modnakasta.ua"
+                 {:From          "a@solovyov.net"
                   :To            to
-                  :Subject       subj
-                  :TextBody      text
+                  :TemplateAlias template
+                  :TemplateModel data
                   :MessageStream "outbound"})}))
 
 
 (defn email-auth! [email]
-  (let [msg   (format "Please open this link to login: https://%s/login/%s"
-                (config/DOMAIN)
-                (auth/email->token email))]
-    (send! email "Come Back Alive - Login" msg)))
+  (let [url (format "https://%s/login/%s"
+              (config/DOMAIN)
+              (auth/email->token email))]
+    (send! {:to       email
+            :template "login"
+            :data     {:action_url    url
+                       :support_email "support@comebackalive.in.ua"
+                       :schedule      (when nil
+                                        {:amount    100
+                                         :currency  "UAH"
+                                         :frequency "month"})}})))
+
+
+(defn receipt! [email {:keys [amount currency next_payment_at]}]
+  (send! {:to       email
+          :template "receipt"
+          :data     {:support_email   "support@comebackalive.in.ua"
+                     :amount          amount
+                     :currency        currency
+                     :next_payment_at next_payment_at}}))
 
 
 (comment
-  (email-auth! "alexander@solovyov.net")
-  (send! "test@blackhole.postmarkapp.com"
-    "Login"
-    "Please login with this link: xxx"))
+  (email-auth! "alexander@solovyov.net"))
