@@ -44,6 +44,7 @@
    ["/login" #'ui.index/start-login]
    ["/login/:token" #'ui.index/process-login]
    ["/logout" #'ui.index/logout]
+   ["/lang/:lang" #'ui.index/set-lang]
    ["/payment/pause" #'ui.payment/pause]
    ["/payment/resume" #'ui.payment/resume]
    ["/payment/result" #'ui.payment/result]
@@ -133,7 +134,7 @@
 
 (defn i18n-mw [handler]
   (fn [req]
-    (let [lang (or (#{"en" "uk"} (get-in req [:cookies "lang"]))
+    (let [lang (or (#{"en" "uk"} (get-in req [:cookies "lang" :value]))
                    "en")]
       (kasta.i18n/with-lang lang
         (handler req)))))

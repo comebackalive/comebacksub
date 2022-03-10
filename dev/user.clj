@@ -27,7 +27,7 @@
               res)))))))
 
 
-(defn update-i18n! []
+(defn trans! []
   (kasta.i18n/update-codebase! ["src"] "resources/i18n/uk.po"))
 
 
@@ -43,6 +43,6 @@
 
 
 (comment
-  (update-i18n!)
+  (trans!)
   (reload-trans!)
   (add-dep '[com.clojure-goes-fast/clj-async-profiler "0.5.1"]))

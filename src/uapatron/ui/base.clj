@@ -1,6 +1,7 @@
 (ns uapatron.ui.base
   (:require [hiccup2.core :as hi]
             [hiccup.page :refer [doctype]]
+            [kasta.i18n]
 
             [uapatron.auth :as auth]
             [uapatron.ui.message :as message]))
@@ -36,8 +37,12 @@
         [:li
          [:a.header__logo {:href "/" :title "COME BACK ALIVE"}
           [:img {:src "/static/img/logo.png"}]]]
-        (when (auth/uid)
-          [:li.header__logout [:a {:href "/logout"} "Logout"]])]]]
+        [:li.header__logout
+         (if (= kasta.i18n/*lang* "uk")
+           [:a {:href "/lang/en"} "EN"]
+           [:a {:href "/lang/uk"} "UK"])
+         (when (auth/uid)
+           [:a.ml5 {:href "/logout"} #t "Logout"])]]]]
      (message/Messages)]))
 
 
@@ -49,10 +54,10 @@
        [:div.footer__copy
         [:div
          [:span "©2022 by "]
-         [:a {:href "http://savelife.in.ua/" :target "_blank"} "www.savelife.in.ua"]
+         [:a {:href "https://www.comebackalive.in.ua/" :target "_blank"} "comebackalive.in.ua"]
          [:span " NGO"]]]
        [:div.footer__social
-        [:p "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."]
+        [:p #t "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."]
         [:ul.footer__icons
          (for [[title img link] SOCIAL]
            [:li [:a {:href link :target "_blank"}

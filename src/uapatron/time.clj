@@ -9,21 +9,23 @@
 (defn now [] (Instant/now))
 
 
+;;; Arithmetic
+
 (defn +days   [^long amount ^Instant t] (.plus t amount ChronoUnit/DAYS))
 (defn +months [^long amount ^Instant t] (.plus t amount ChronoUnit/MONTHS))
 
+
+;;; Formatting patterns
 
 (def ^DateTimeFormatter short-fmt
   (-> (DateTimeFormatter/ofPattern "MMMM, d")
       (.withZone ZoneOffset/UTC)))
 
-
-(defn short [t]
-  (.format short-fmt t))
-
-;;  useful formatters
 (def dd-MM-yyyy-HH-mm-ss (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss"))
 (def yyyy-MM-dd (DateTimeFormatter/ofPattern "yyyy-MM-dd"))
+
+
+;;; Formatting functions
 
 (defn -parse-time [fmt value]
   (when value
@@ -32,6 +34,12 @@
 (defn -parse-date [fmt value]
   (when value
     (.toInstant (.atStartOfDay (LocalDate/parse value fmt)) ZoneOffset/UTC)))
+
+(defn short [t]
+  (.format short-fmt t))
+
+;;  useful formatters
+
 
 
 (def parse-dt (partial -parse-time dd-MM-yyyy-HH-mm-ss))

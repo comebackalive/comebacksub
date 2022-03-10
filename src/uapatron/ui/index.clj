@@ -1,31 +1,27 @@
 (ns uapatron.ui.index
-  (:require [clojure.tools.logging :as log]
-
-            [uapatron.email :as email]
+  (:require [uapatron.email :as email]
             [uapatron.auth :as auth]
             [uapatron.db :as db]
-            [uapatron.ui.base :as base]
-            [uapatron.bl.fondy :as bl.fondy]
-            [uapatron.ui.payment :as ui.payment]))
+            [uapatron.ui.base :as base]))
 
 
 (defn LoginSent [{:keys [email]}]
   (base/wrap
-    [:p.message
-     "Authentication link has been sent to "
-     email
-     ". Please open the link to log in - it's going to be valid for 5 minutes."]))
+    #t [:p.message
+        "Authentication link has been sent to "
+        email
+        ". Please open the link to log in - it's going to be valid for 5 minutes."]))
 
 
 (defn IndexPage []
   (base/wrap
     [:div.subscribe
-     [:div.subscribe__info
-      "IT'S NOT TOO LATE." [:br]
-      "WE NEED YOUR SUPPORT NOW MORE THAN EVER"]
+     #t [:div.subscribe__info
+         "IT'S NOT TOO LATE." [:br]
+         "WE NEED YOUR SUPPORT NOW MORE THAN EVER"]
      [:form.subscribe__form {:method "post" :action "/login"}
       [:input.subscribe__input {:type "email" :name "email" :required true :placeholder "Email"}]
-      [:button.subscribe__button {:name "login"} "Login"]]]))
+      [:button.subscribe__button {:name "login"} #t "Login"]]]))
 
 
 ;;; HTTP views
@@ -70,3 +66,16 @@
   {:status  302
    :session nil
    :headers {"Location" "/"}})
+
+
+(defn set-lang
+  {:parameters {:path {:lang [:enum "en" "uk"]}}}
+
+  [req]
+  (let [lang (-> req :path-params :lang)]
+    {:status  302
+     :cookies {"lang" {:value     lang
+                       :path      "/"
+                       :max-age   (* 3600 24 3650)
+                       :http-only false}}
+     :headers {"Location" "/"}}))

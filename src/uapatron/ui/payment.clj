@@ -8,6 +8,7 @@
             [uapatron.bl.fondy :as bl.fondy]
             [uapatron.utils :as utils]))
 
+
 ;;; queries
 
 (defn user-cards-q []
@@ -57,7 +58,7 @@
     [:input {:type "hidden" :name "freq" :value freq}]
     [:button (if amount
                (str amount " UAH")
-               "Subscribe")]]])
+               #t "Subscribe")]]])
 
 
 (def UK-DURATION
@@ -114,20 +115,26 @@
 
     (when-let [cards (seq (db/q (user-cards-q)))]
       [:section
-       [:h2 "Your cards"]
+       [:h2 #t "Your cards"]
        [:div
         (for [card cards]
-          [:div (card-fmt (:card_pan card)) " at " (:created_at card)])]])
+          [:div (card-fmt (:card_pan card))
+           " — "
+           (t/short (:created_at card))])]])
 
-    [:h2 "Once a day"]
+    [:h2 #t "Subscribe for montly payment"]
+    [:div
+     (PayButton {:freq "month" :amount 300})
+     (PayButton {:freq "month" :amount 1000})
+     (PayButton {:freq "month" :amount 5000})
+     (PayButton {:freq "month"})]
+
+    [:br]
+    [:br]
+    [:h2 "Once a day (debug)"]
     [:div
      (PayButton {:freq "day" :amount 100})
-     (PayButton {:freq "day"})]
-
-    [:h2 "Once a week"]
-    [:div
-     (PayButton {:freq "week" :amount 500})
-     (PayButton {:freq "week"})]))
+     (PayButton {:freq "day"})]))
 
 
 (defn PaymentSuccess []

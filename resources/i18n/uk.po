@@ -1,11 +1,11 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Translations for uapatron.
+# Copyright (C) 2022 contributors
+# Alexander Solovyov <alexander@solovyov.net>, 2022.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version:\n"
-"PO-Revision-Date: 2022-03-09 15:55+0200\n"
+"PO-Revision-Date: 2022-03-10 10:35+0200\n"
 "Last-Translator:\n"
 "Language-Team:\n"
 "Language: uk\n"
@@ -19,6 +19,14 @@ msgstr ""
 #: src/uapatron/ui/payment.clj
 msgid "From card "
 msgstr "З картки "
+
+#: src/uapatron/ui/index.clj
+msgid "Login"
+msgstr "Увійти"
+
+#: src/uapatron/ui/base.clj
+msgid "Logout"
+msgstr "Вийти"
 
 #: src/uapatron/ui/payment.clj
 msgid "Next payment at "
@@ -41,17 +49,36 @@ msgid "Some error happened"
 msgstr "Сталася якась помилка"
 
 #: src/uapatron/ui/payment.clj
+msgid "Subscribe"
+msgstr "Підписатися"
+
+#: src/uapatron/ui/payment.clj
+msgid "Subscribe for montly payment"
+msgstr "Підписатися на щомісячний платіж"
+
+#: src/uapatron/ui/payment.clj
 msgid "Subscription is paused"
 msgstr "Підписка призупинена"
 
+#: src/uapatron/ui/base.clj
+msgid "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."
+msgstr "Фонд «Повернись живим» нічим не відрізняється від звичайних українців. Ми, як і всі, люди, яким у 2014 році довелося змінити свій спосіб життя."
+
 #: src/uapatron/ui/payment.clj
-#, fuzzy
+msgid "Your cards"
+msgstr "Ваші картки"
+
+#: src/uapatron/ui/payment.clj
 msgid "Your subscription"
-msgstr "Зупинити підписку"
+msgstr "Ваша підписка"
 
 #: src/uapatron/ui/payment.clj
 msgid "Your sum"
 msgstr "Інша сума"
+
+#: src/uapatron/ui/index.clj
+msgid "~[:div.subscribe__info \"IT'S NOT TOO LATE.\" [:br] \"WE NEED YOUR SUPPORT NOW MORE THAN EVER\"]"
+msgstr "~[:div.subscribe__info \"УКРАЇНІ ПОТРІБНА ВАША ДОПОМОГА. ЗАРАЗ\" [:br] \"ЧАС ДЛЯ ДІЇ. КОЖНА ГРИВНЯ ДОПОМАГАЄ\" [:br] \"ЗБЕРЕГТИ ЧИЄСЬ ЖИТТЯ.\"]"
 
 #: src/uapatron/ui/payment.clj
 msgid "~[:h1 \"Hello, \" (:email (auth/user))]"
@@ -60,3 +87,7 @@ msgstr "~[:h1 \"Привіт, \" (:email (auth/user))]"
 #: src/uapatron/ui/payment.clj
 msgid "~[:h4 amount \" \" (:currency item) \" every \" (:frequency item)]"
 msgstr "~[:h4 amount \" \" (:currency item) \" кожен \" (UK-DURATION (:frequency item))]"
+
+#: src/uapatron/ui/index.clj
+msgid "~[:p.message \"Authentication link has been sent to \" email \". Please open the link to log in - it's going to be valid for 5 minutes.\"]"
+msgstr "~[:p.message \"Посилання для авторизації було відправлено на \" email \". Будь ласка, відкрийте посилання, щоб увійти — воно буде працювати 5 хвилин.\"]"
