@@ -13,7 +13,7 @@ upgrade:
 	clojure -M:dev:ancient --upgrade
 
 uber:
-	clojure -Srepro -T:build uber
+	KASTA_I18N=uk clojure -Srepro -T:build uber
 
 clean:
 	rm -rf target
