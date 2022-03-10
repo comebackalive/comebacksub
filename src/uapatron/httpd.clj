@@ -147,9 +147,7 @@
   (fn [req]
     (let [lang     (or (config/LANGS (get-in req [:cookies "lang" :value]))
                        "en")
-          currency (or (config/CURRENCIES
-                         (get-in req [:cookies "currency" :value]))
-                       "UAH")]
+          currency (get {"en" "USD", "uk" "UAH"} lang)]
       (binding [kasta.i18n/*lang* lang
                 config/*currency* currency]
         (handler req)))))

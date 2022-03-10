@@ -12,7 +12,6 @@
 
 (def PRESETS
   {"UAH" [300 1000 5000]
-   "EUR" [10  30   100]
    "USD" [10  30   100]})
 
 
@@ -131,10 +130,6 @@
            (t/short (:created_at card))])]])
 
     [:h2 #t "Subscribe for montly payment"]
-    [:ul
-     (for [currency ["UAH" "EUR" "USD"]]
-       [:li [:a {:href (str "/currency/" currency)} currency]])]
-
     (let [currency config/*currency*
           preset   (get PRESETS currency)]
       [:div
