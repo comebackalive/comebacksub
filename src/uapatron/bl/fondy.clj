@@ -301,15 +301,15 @@
       :> true
       :< false)))
 
-
+;; inline test 😁
 (doseq [[[planned      last-started] result]
         {["2021-12-31" "2021-12-30"] false
          ["2021-12-30" "2021-12-31"] true
          ["2021-12-30" "2021-12-30"] true
          ["2021-12-30" nil]          false}]
   (assert (= (double-charge?
-               (t/parse-yyyy-MM-dd planned)
-               (t/parse-yyyy-MM-dd last-started)) result)))
+               (t/parse-date planned)
+               (t/parse-date last-started)) result)))
 
 
 (defn process-transaction!
