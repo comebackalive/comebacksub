@@ -32,7 +32,8 @@
 
 
 (defn reload-trans! []
-  (swap! kasta.i18n/TRANSLATIONS empty))
+  (swap! kasta.i18n/TRANSLATIONS empty)
+  (refresh))
 
 
 (defn add-dep [dep]

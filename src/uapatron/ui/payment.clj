@@ -6,7 +6,14 @@
             [uapatron.db :as db]
             [uapatron.time :as t]
             [uapatron.bl.fondy :as bl.fondy]
-            [uapatron.utils :as utils]))
+            [uapatron.utils :as utils]
+            [uapatron.config :as config]))
+
+
+(def PRESETS
+  {"UAH" [300 1000 5000]
+   "EUR" [10  30   100]
+   "USD" [10  30   100]})
 
 
 ;;; queries
@@ -47,7 +54,7 @@
 
 ;;; test cards: https://docs.fondy.eu/en/docs/page/2/
 
-(defn PayButton [{:keys [amount freq]}]
+(defn PayButton [{:keys [freq amount currency]}]
   [:form {:method "post"
           :action "/api/go-to-payment"
           :style  "display: inline-block"}
@@ -55,9 +62,10 @@
     [:input (if amount
               {:type "hidden" :name "amount" :value amount}
               {:type "text" :name "amount" :placeholder #t "Your sum"})]
+    [:input {:type "hidden" :name "currency" :value currency}]
     [:input {:type "hidden" :name "freq" :value freq}]
     [:button (if amount
-               (str amount " UAH")
+               (str amount " " currency)
                #t "Subscribe")]]])
 
 
@@ -123,17 +131,22 @@
            (t/short (:created_at card))])]])
 
     [:h2 #t "Subscribe for montly payment"]
-    [:div
-     (PayButton {:freq "month" :amount 300})
-     (PayButton {:freq "month" :amount 1000})
-     (PayButton {:freq "month" :amount 5000})
-     (PayButton {:freq "month"})]
+    [:ul
+     (for [currency ["UAH" "EUR" "USD"]]
+       [:li [:a {:href (str "/currency/" currency)} currency]])]
+
+    (let [currency config/*currency*
+          preset   (get PRESETS currency)]
+      [:div
+       (for [amount preset]
+         (PayButton {:freq "month" :amount amount :currency currency}))
+       (PayButton {:freq "month" :currency currency})])
 
     [:br]
     [:br]
     [:h2 "Once a day (debug)"]
     [:div
-     (PayButton {:freq "day" :amount 100})
+     (PayButton {:freq "day" :amount 100 :currency "UAH"})
      (PayButton {:freq "day"})]))
 
 

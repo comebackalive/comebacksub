@@ -18,7 +18,7 @@
             [uapatron.auth :as auth]
             [uapatron.ui.index :as ui.index]
             [uapatron.ui.payment :as ui.payment]
-            [uapatron.api.fondy :as api.fondy]
+            [uapatron.api.payment :as api.payment]
             [uapatron.ui.message :as message])
   (:import [hiccup.util RawString]))
 
@@ -45,11 +45,12 @@
    ["/login/:token" #'ui.index/process-login]
    ["/logout" #'ui.index/logout]
    ["/lang/:lang" #'ui.index/set-lang]
+   ["/currency/:currency" #'ui.index/set-currency]
    ["/payment/pause" #'ui.payment/pause]
    ["/payment/resume" #'ui.payment/resume]
    ["/payment/result" #'ui.payment/result]
-   ["/api/payment-callback" #'api.fondy/payment-callback]
-   ["/api/go-to-payment" #'api.fondy/go-to-payment]
+   ["/api/payment-callback" #'api.payment/payment-callback]
+   ["/api/go-to-payment" #'api.payment/go-to-payment]
    ["/static/{*path}" #'static]])
 
 
@@ -101,15 +102,25 @@
 
 (defn coerce [handler]
   (fn [req]
-    (let [m       (:match req)
-          coerced (coercion/coerce-request (:result m) req)
-          data    (into {} (for [[k v] coerced]
-                             (case k
-                               :form      [:form-params v]
-                               :query     [:query-params v]
-                               :path      [:path-params v]
-                               :multipart [:multipart-params v])))]
-      (handler (merge req data)))))
+    (try
+      (let [m       (:match req)
+            coerced (coercion/coerce-request (:result m) req)
+            data    (into {} (for [[k v] coerced]
+                               (case k
+                                 :form      [:form-params v]
+                                 :query     [:query-params v]
+                                 :path      [:path-params v]
+                                 :multipart [:multipart-params v])))]
+        (handler (merge req data)))
+      (catch clojure.lang.ExceptionInfo e
+        (let [data (ex-data e)]
+          (if-let [status (case (:type data)
+                            ::coercion/request-coercion  400
+                            ::coercion/response-coercion 500
+                            nil)]
+            {:status status
+             :body   (coercion/encode-error data)}
+            (throw e)))))))
 
 
 (defn reitit-route [handler]
@@ -132,18 +143,22 @@
         res))))
 
 
-(defn i18n-mw [handler]
+(defn settings-mw [handler]
   (fn [req]
-    (let [lang (or (#{"en" "uk"} (get-in req [:cookies "lang" :value]))
-                   "en")]
-      (kasta.i18n/with-lang lang
+    (let [lang     (or (config/LANGS (get-in req [:cookies "lang" :value]))
+                       "en")
+          currency (or (config/CURRENCIES
+                         (get-in req [:cookies "currency" :value]))
+                       "UAH")]
+      (binding [kasta.i18n/*lang* lang
+                config/*currency* currency]
         (handler req)))))
 
 
 (defn make-app []
   (-> -app
       (render-html)
-      (i18n-mw)
+      (settings-mw)
       (coerce)
       (reitit-route)
       (message/message-mw)

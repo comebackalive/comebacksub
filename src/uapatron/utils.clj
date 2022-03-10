@@ -12,9 +12,6 @@
 (defn uuid [] (UUID/randomUUID))
 
 
-(def keywordize-keys clojure.walk/keywordize-keys)
-
-
 (defn remove-nils
   "remove pairs of key-value that has nil value from a (possibly nested)
   map. also transform map to nil if all of its value are nil"
@@ -29,25 +26,6 @@
     nm))
 
 
-(defn post!
-  ([url] (post! url nil))
-  ([url body]
-   (-> @(http/request {:method  :post
-                       :url     url
-                       :headers {"Content-Type" "application/json"}
-                       :body    (when body (json/encode body))
-                       :timeout (config/TIMEOUT)})
-       :body
-       (json/parse-string true))))
-
-
-(defn msg-redir
-  ([message] (msg-redir "/" message))
-  ([url message]
-   {:status  302
-    :headers {"Location" (str url "?message=" message)}}))
-
-
 (defn parse-uuid
   [smth]
   (cond (string? smth) (try (java.util.UUID/fromString smth)
@@ -60,3 +38,35 @@
     (integer? value) value
     (string? value)  (try (Long/parseLong ^String value 10)
                           (catch Exception _ nil))))
+
+;;; HTTP
+
+(defn post!
+  ([url] (post! url nil))
+  ([url body]
+   (-> @(http/request {:method  :post
+                       :url     url
+                       :headers {"Content-Type" "application/json"}
+                       :body    (when body (json/encode body))
+                       :timeout (config/TIMEOUT)})
+       :body
+       (json/parse-string true))))
+
+
+(defn redir [url]
+  {:status 302
+   :headers {"Location" url}})
+
+
+(defn with-cookie [res cookie-name value]
+  (assoc-in res [:cookies cookie-name]
+    {:value     value
+     :path      "/"
+     :max-age   (* 3600 24 3650)
+     :http-only false}))
+
+
+(defn msg-redir
+  ([message] (msg-redir "/" message))
+  ([url message]
+   (redir (str url "?message=" message))))

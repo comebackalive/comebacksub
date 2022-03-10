@@ -4,6 +4,7 @@
             [org.httpkit.client :as http]
             [org.httpkit.sni-client :as sni-client]
             [sentry-clj.core :as sentry]
+            [kasta.i18n]
 
             [uapatron.httpd]
             [uapatron.bl.schedule]

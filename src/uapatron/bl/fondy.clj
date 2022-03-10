@@ -69,14 +69,14 @@
 
 
 (defn make-link-ctx
-  [user amount freq]
+  [user {:keys [freq amount currency]}]
   {:order_id            (make-order-id)
-   :order_desc          (make-desc freq amount "UAH")
+   :order_desc          (make-desc freq amount currency)
    :merchant_id         (config/MERCHANT-ID)
-   :currency            (first ["UAH" "RUB" "USD" "EUR" "GBP" "CZK"])
+   :currency            currency
    :amount              amount
    :merchant_data       (pr-str {:user_id (:id user)
-                                 :freq freq})
+                                 :freq    freq})
    :required_rectoken   "Y"
    :lang                (first ["uk"
                                 "en"
@@ -152,8 +152,8 @@
 
 
 (defn get-payment-link
-  [user amount freq]
-  (let [ctx (make-link-ctx user amount freq)
+  [user config]
+  (let [ctx (make-link-ctx user config)
         _   (log/debug "fondy ctx" (pr-str ctx))
         res (-> (utils/post! POST-URL {:request (sign ctx)})
                 :response)]

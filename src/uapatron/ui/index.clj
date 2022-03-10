@@ -2,7 +2,9 @@
   (:require [uapatron.email :as email]
             [uapatron.auth :as auth]
             [uapatron.db :as db]
-            [uapatron.ui.base :as base]))
+            [uapatron.ui.base :as base]
+            [uapatron.utils :as utils]
+            [uapatron.config :as config]))
 
 
 (defn LoginSent [{:keys [email]}]
@@ -69,13 +71,18 @@
 
 
 (defn set-lang
-  {:parameters {:path {:lang [:enum "en" "uk"]}}}
+  {:parameters {:path {:lang (into [:enum] config/LANGS)}}}
 
   [req]
-  (let [lang (-> req :path-params :lang)]
-    {:status  302
-     :cookies {"lang" {:value     lang
-                       :path      "/"
-                       :max-age   (* 3600 24 3650)
-                       :http-only false}}
-     :headers {"Location" "/"}}))
+
+  (-> (utils/redir "/")
+      (utils/with-cookie "lang" (-> req :path-params :lang))))
+
+
+(defn set-currency
+  {:parameters {:path {:currency (into [:enum] config/CURRENCIES)}}}
+
+  [req]
+
+  (-> (utils/redir "/")
+      (utils/with-cookie "currency" (-> req :path-params :currency))))

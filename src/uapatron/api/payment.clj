@@ -1,4 +1,4 @@
-(ns uapatron.api.fondy
+(ns uapatron.api.payment
   (:require [com.akovantsev.blet.core :refer [blet]]
 
             [uapatron.bl.fondy :as bl.fondy]
@@ -14,15 +14,20 @@
 
 
 (defn go-to-payment
-  {:parameters {:form {:freq   string?
-                       :amount int?}}}
+  {:parameters {:form [:map
+                       [:freq     [:enum "day" "week" "month"]]
+                       [:amount   int?]
+                       [:currency {:optional true} [:enum "UAH" "EUR" "USD"]]]}}
 
   [{:keys [form-params]}]
 
   (blet [freq   (:freq form-params)
          amount (:amount form-params)
          ;; TODO: process exception here (maybe rework exception to Option)
-         link   (try (bl.fondy/get-payment-link (auth/user) (* amount 100) freq)
+         link   (try (bl.fondy/get-payment-link (auth/user)
+                       {:freq     freq
+                        :amount   (* amount 100)
+                        :currency (:currency form-params "UAH")})
                      (catch Exception e
                        {:error e}))]
     (cond

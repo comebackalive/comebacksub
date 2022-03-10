@@ -18,6 +18,13 @@
          (System/exit 1)))))
 
 
+(def LANGS #{"en" "uk"})
+(def CURRENCIES #{"UAH" "EUR" "USD"})
+
+
+(def ^:dynamic *currency* nil)
+
+
 (def DEV      #(-> (get-env "ENV" "dev"
                      "ENV set an app environment, dev/prod")
                    (not= "prod")))
