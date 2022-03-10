@@ -1,11 +1,12 @@
 body {
   font-size: 16px;
   font-family: Roboto,Arial,Helvetica,sans-serif;
+  background-color: #fafafa;
 }
 
 /* BASE */
 .container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -19,14 +20,49 @@ body {
 
 /* HEADER */
 .header {
-  padding: 12px 0;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+  padding: 24px 0;
+  box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.12);
   overflow: hidden;
+  background-color: #FFFFFF;
+}
+
+.header__by {
+  font-size: 14px;
+  margin-left: 80px;
+}
+
+.header__by span:first-child {
+  display: block;
+  margin-bottom: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 26px;
+  font-size: 22px;
+  letter-spacing: -2px;
+}
+
+.header__by a {
+  color: #000000;
+}
+
+.header__contacts {
+  font-size: 15px;
+  line-height: 20px;
+  margin-left: auto;
+}
+
+.header__contacts-wrap {
+  display: grid;
+  grid-template-columns: auto 180px;
+  gap: 4px 8px;
+}
+
+.header__contacts-wrap span:first-child {
+  text-align: right;
 }
 
 .header nav ul {
   display: flex;
-  align-items: center;
   padding: 0;
   margin: 0;
   font-size: 0;
@@ -37,9 +73,33 @@ body {
   margin-left: auto;
 }
 
-.header__logout a {
-  color: #2B5336;
+.header__logout-btn {
+  display: block;
+  width: 138px;
+  line-height: 48px;
   font-size: 18px;
+  color: #38B586;
+  text-align: center;
+  background: rgba(56, 181, 134, 0.2);
+  border-radius: 24px;
+  text-decoration: none;
+}
+
+.header__logout-btn:hover {
+  background: #43D09C;
+  color: #417553;
+}
+
+.header__select-lang {
+  display: block;
+  width: 138px;
+  margin: 20px 0 0 0;
+  text-align: center;
+}
+
+.header__lang-item {
+  font-size: 16px;
+  color: #000000;
 }
 
 .header__logo img {
@@ -50,9 +110,9 @@ body {
 
 /* FOOTER */
 footer {
-  margin-top: 40px;
-  padding: 12px 0;
+  padding: 80px 0;
   border-top: 1px solid black;
+  background-color: #FFFFFF;
 }
 
 .footer__inner {
@@ -63,6 +123,15 @@ footer {
 .footer__copy,
 .footer__social {
   width: 50%;
+}
+
+.footer__logo {
+  display: block;
+  margin-bottom: 40px;
+}
+
+.footer__logo img {
+  width: 144px;
 }
 
 .footer__copy a {
@@ -86,19 +155,25 @@ footer {
   width: 40px;
 }
 
-.ml5 {
-  margin-left: .5rem;
-}
-
 /* END FOOTER */
 
 /* FORM */
 .subscribe {
-  width: 600px;
-  margin: 40px auto 0 auto;
-  padding: 40px;
-  background-color: rgb(250, 250, 250);
-  border-radius: 2px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 375px;
+}
+
+.subscribe__main {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.subscribe__side {
+  height: 505px;
+  background: url("./img/46dc18_ff364cd22d9f48b08bce1200675890a6_mv2.jpg");
 }
 
 .subscribe__form {
@@ -108,34 +183,67 @@ footer {
   gap: 16px;
 }
 
-.subscribe__info {
-  font-weight: bold;
-  font-size: 26px;
-  margin-bottom: 30px;
+.subscribe__label {
+  display: block;
+  font-weight: 400;
+  font-size: 36px;
+  line-height: 50px;
+  text-align: center;
+  margin-bottom: 64px;
 }
 
 .subscribe__input {
-  width: 400px;
-  height: 40px;
   font-size: 18px;
-  border: 1px solid #2B5336;
-  border-radius: 4px;
   text-indent: 16px;
+  width: 344px;
+  height: 48px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  border: none;
 }
 
 .subscribe__button {
-  width: 120px;
-  height: 44px;
+  height: 48px;
+  line-height: 48px;
+  padding: 0 44px;
+  font-weight: 500;
   font-size: 18px;
-  color: rgb(250, 250, 250);
-  background-color: #407C51;
-  border: 1px solid #2B5336;
-  border-radius: 4px;
+  color: #ffffff;
+  background-color: #38B586;
+  border: none;
+  border-radius: 24px;
   cursor: pointer;
   transition: all 0.2s ease, visibility 0s;
 }
+
 .subscribe__button:hover {
-  background-color: #3AD19B;;
+  background: #43D09C;
+  color: #417553;
+}
+
+.subscribe__sent {
+  font-size: 36px;
+  text-align: center;
+}
+
+.subscribe__message {
+  padding: 24px;
+  font-size: 18px;
+  background: rgba(56, 181, 134, 0.08);
+  border-radius: 16px;
+  margin-top: 64px;
+}
+
+.support-us {
+  display: flex;
+  justify-content: center;
+  padding: 80px 0;
+  background-color: #000000;
+}
+.support-us h2 {
+  font-size: 36px;
+  text-align: center;
+  color: #FFFFFF;
 }
 
 /* END FORM */

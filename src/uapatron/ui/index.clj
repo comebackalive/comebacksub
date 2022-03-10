@@ -9,21 +9,28 @@
 
 (defn LoginSent [{:keys [email]}]
   (base/wrap
-    #t [:p.message
-        "Authentication link has been sent to "
-        email
-        ". Please open the link to log in - it's going to be valid for 5 minutes."]))
+    [:div.subscribe.container
+     [:div.subscribe__main
+      [:div.subscribe__sent
+       [:div #t "Authentication link has been sent to"]
+       [:div email]
+       [:div.subscribe__message #t "Please open the link to log in - it's going to be valid for 5 minutes."]]]
+     [:div.subscribe__side]]))
 
 
 (defn IndexPage []
   (base/wrap
-    [:div.subscribe
-     #t [:div.subscribe__info
-         "IT'S NOT TOO LATE." [:br]
-         "WE NEED YOUR SUPPORT NOW MORE THAN EVER"]
-     [:form.subscribe__form {:method "post" :action "/login"}
-      [:input.subscribe__input {:type "email" :name "email" :required true :placeholder "Email"}]
-      [:button.subscribe__button {:name "login"} #t "Login"]]]))
+    [:div
+     [:div.subscribe.container
+      [:div.subscribe__main
+       [:div
+        [:label.subscribe__label {:for "email"} #t "Enter your email"]
+        [:form.subscribe__form {:method "post" :action "/login"}
+         [:input.subscribe__input {:type "email" :name "email" :id "email" :required true :placeholder "Email"}]
+         [:button.subscribe__button {:name "login"} #t "Login"]]]]
+      [:div.subscribe__side]]
+     [:div.support-us
+      #t [:h2 "IT'S NOT TOO LATE." [:br] "WE NEED YOUR SUPPORT NOW MORE THAN EVER"]]]))
 
 
 ;;; HTTP views
