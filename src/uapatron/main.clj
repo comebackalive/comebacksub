@@ -23,7 +23,8 @@
 
 
 (when (seq (config/SENTRY))
-  (sentry/init! (config/SENTRY) {:release VERSION}))
+  (sentry/init! (config/SENTRY) {:release VERSION
+                                 :in-app-includes ["uapatron"]}))
 
 
 (mount/defstate schedule
