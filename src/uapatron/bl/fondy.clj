@@ -19,11 +19,6 @@
 (def POST-URL "https://pay.fondy.eu/api/checkout/url/")
 (def RECURRING-URL "https://pay.fondy.eu/api/recurring")
 
-(def DESC "Допомога savelife.in.ua")
-
-(def DESC-RECUR "Допомога savelife.in.ua (регулярний платіж)")
-
-
 (defn sign [ctx]
   (let [s      (->> (sort ctx)
                     (map val)

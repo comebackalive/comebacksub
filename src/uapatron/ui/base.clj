@@ -40,7 +40,7 @@
         [:li.header__by
          [:span #t "DEFEND UKRAINE TOGETHER"]
          [:span "by "]
-         [:a {:href "http://savelife.in.ua/" :target "_blank"} "savelife.in.ua"]]
+         [:a {:href "https://comebackalive.in.ua/" :target "_blank"} "comebackalive.in.ua"]]
         [:li.header__contacts
          [:span.header__contacts-wrap
           [:span #t "For appeals from the military:"]
