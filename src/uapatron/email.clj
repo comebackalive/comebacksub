@@ -1,8 +1,10 @@
 (ns uapatron.email
   (:require [org.httpkit.client :as http]
-            [uapatron.config :as config]
             [cheshire.core :as json]
-            [uapatron.auth :as auth]))
+
+            [uapatron.config :as config]
+            [uapatron.auth :as auth]
+            [uapatron.time :as t]))
 
 
 (defn send! [{:keys [to template data]}]
@@ -40,7 +42,7 @@
           :data     {:support_email   "support@comebackalive.in.ua"
                      :amount          amount
                      :currency        currency
-                     :next_payment_at next_payment_at}}))
+                     :next_payment_at (t/short next_payment_at)}}))
 
 
 (comment
