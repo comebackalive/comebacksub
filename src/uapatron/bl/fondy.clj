@@ -228,7 +228,7 @@
               ;; we're allowing only one schedule per user right now
               (db/one (upsert-settings-q settings)))))
         (email/receipt! (:email (auth/get-user (:user_id payload)))
-          {:amount          (utils/parse-int amount)
+          {:amount          (int (/ (utils/parse-int amount) 100))
            :currency        actual_currency
            :next_payment_at next-payment-at})))))
 
