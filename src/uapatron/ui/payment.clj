@@ -55,18 +55,27 @@
 ;;; test cards: https://docs.fondy.eu/en/docs/page/2/
 
 (defn PayButton [{:keys [freq amount currency]}]
-  [:form {:method "post"
-          :action "/api/go-to-payment"
-          :style  "display: inline-block"}
-   [:fieldset
-    [:input (if amount
-              {:type "hidden" :name "amount" :value amount}
-              {:type "text" :name "amount" :placeholder #t "Your sum"})]
-    [:input {:type "hidden" :name "currency" :value currency}]
-    [:input {:type "hidden" :name "freq" :value freq}]
-    [:button (if amount
-               (str amount " " currency)
-               #t "Subscribe")]]])
+  [:div.payments__item
+   [:form {:method "post"
+           :action "/api/go-to-payment"}
+    [:div.payments__item-wrap
+     [:div {:class (cond-> "payments__item-icon"
+                     (nil? amount)
+                     (str " no-amount"))}]
+     (if amount
+       [:div
+        [:h4.payments__item-amount amount " " currency]
+        [:input {:type "hidden" :name "amount" :value amount}]]
+
+       [:input.payments__item-input {:type "text" :name "amount" :placeholder #t "Your sum"}])
+
+     [:span.payments__item-interval
+      (if (= freq "day")
+        [:span #t "per day"]
+        [:span #t "in month"])]
+     [:input {:type "hidden" :name "currency" :value currency}]
+     [:input {:type "hidden" :name "freq" :value freq}]
+     [:button.payments__item-btn #t "Subscribe"]]]])
 
 
 (def UK-DURATION
@@ -112,38 +121,44 @@
 
 (defn DashPage []
   (base/wrap
-    #t [:h1 "Hello, " (:email (auth/user))]
+    [:div.container
+     #t [:h1 "Hello, " (:email (auth/user))]
 
-    (when-let [items (seq (db/q (user-schedule-q)))]
-      [:section
-       [:h2 #t "Your subscription"]
-       [:div.row
-        (for [item items]
-          (-ScheduleItem item))]])
+     (when-let [items (seq (db/q (user-schedule-q)))]
+       [:section
+        [:h2 #t "Your subscription"]
+        [:div
+         (for [item items]
+           (-ScheduleItem item))]])
 
-    (when-let [cards (seq (db/q (user-cards-q)))]
-      [:section
-       [:h2 #t "Your cards"]
-       [:div
-        (for [card cards]
-          [:div (card-fmt (:card_pan card))
-           " — "
-           (t/short (:created_at card))])]])
+     (when-let [cards (seq (db/q (user-cards-q)))]
+       [:section
+        [:h2 #t "Your cards"]
+        [:div
+         (for [card cards]
+           [:div (card-fmt (:card_pan card))
+            " — "
+            (t/short (:created_at card))])]])
 
-    [:h2 #t "Subscribe for montly payment"]
-    (let [currency config/*currency*
-          preset   (get PRESETS currency)]
-      [:div
-       (for [amount preset]
-         (PayButton {:freq "month" :amount amount :currency currency}))
-       (PayButton {:freq "month" :currency currency})])
+     [:section.payment-section
+      [:h2 #t "Subscribe for montly payment"]
+      (let [currency config/*currency*
+            preset   (get PRESETS currency)]
+        [:div.payments
+         (for [amount preset]
+           (PayButton {:freq "month" :amount amount :currency currency}))
 
-    [:br]
-    [:br]
-    [:h2 "Once a day (debug)"]
-    [:div
-     (PayButton {:freq "day" :amount 100 :currency "UAH"})
-     (PayButton {:freq "day"})]))
+         (PayButton {:freq "month" :currency currency})])
+
+      [:div.payment-section__message
+       [:p.t-bold #t "Support is updated automatically monthly."]
+       [:p #t "You can cancel the automatic renewal or change your payment at any time."]]]
+
+     [:section.payment-section
+      [:h2 "Once a day (debug)"]
+      [:div.payments
+       (PayButton {:freq "day" :amount 100 :currency "UAH"})
+       (PayButton {:freq "day"})]]]))
 
 
 (defn PaymentSuccess []
