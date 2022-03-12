@@ -7,7 +7,8 @@
             [uapatron.time :as t]
             [uapatron.bl.fondy :as bl.fondy]
             [uapatron.utils :as utils]
-            [uapatron.config :as config]))
+            [uapatron.config :as config]
+            [clojure.edn :as edn]))
 
 
 (def PRESETS
@@ -72,7 +73,7 @@
      [:span.payments__item-interval
       (if (= freq "day")
         [:span #t "per day"]
-        [:span #t "in month"])]
+        [:span #t "per month"])]
      [:input {:type "hidden" :name "currency" :value currency}]
      [:input {:type "hidden" :name "freq" :value freq}]
      [:button.payments__item-btn #t "Subscribe"]]]])
@@ -107,14 +108,10 @@
 
        (if paused?
          [:form {:method    "post"
-                 :action    "/payment/resume"
-                 :ts-req    ""
-                 :ts-target "parent .card"}
+                 :action    "/payment/resume"}
           [:button {:name "id" :value (:id item)} #t "Resume subscription"]]
          [:form {:method    "post"
-                 :action    "/payment/pause"
-                 :ts-req    ""
-                 :ts-target "parent .card"}
+                 :action    "/payment/pause"}
           [:button {:name "id" :value (:id item)} #t "Pause subscription"]])])))
 
 
@@ -130,46 +127,55 @@
      [:p #t "Please contact developers"]]))
 
 
-(defn DashPage []
-  (base/wrap
-    [:div.container
-     #t [:h1 "Hello, " (:email (auth/user))]
+(defn PaymentSection []
+  (hi/html
+    [:section.payment-section
+     [:h2 #t "Subscribe for montly payment"]
+     (let [currency config/*currency*
+           preset   (get PRESETS currency)]
+       [:div.payments
+        (for [amount preset]
+          (PayButton {:freq "month" :amount amount :currency currency}))
 
-     (when-let [items (seq (db/q (user-schedule-q)))]
-       [:section
-        #_[:h2 #t "Your subscription"]
-        [:div
-         (for [item items]
-           (-ScheduleItem item))]])
+        (PayButton {:freq "month" :currency currency})])
 
-     #_(when-let [cards (seq (db/q (user-cards-q)))]
-       [:section
-        [:h2 #t "Your cards"]
-        [:div
-         (for [card cards]
-           [:div (card-fmt (:card_pan card))
-            " — "
-            (t/short (:created_at card))])]])
+     [:div.payment-section__message
+      [:p.t-bold #t "Support is updated automatically monthly."]
+      [:p #t "You can cancel the automatic renewal or change your payment at any time."]]]))
 
-     [:section.payment-section
-      [:h2 #t "Subscribe for montly payment"]
-      (let [currency config/*currency*
-            preset   (get PRESETS currency)]
-        [:div.payments
-         (for [amount preset]
-           (PayButton {:freq "month" :amount amount :currency currency}))
 
-         (PayButton {:freq "month" :currency currency})])
+(defn DashPage [config]
+  (let [schedule (db/one (user-schedule-q))]
+    (base/wrap
+      [:div.container
+       #t [:h1 "Hello, " (:email (auth/user))]
 
-      [:div.payment-section__message
-       [:p.t-bold #t "Support is updated automatically monthly."]
-       [:p #t "You can cancel the automatic renewal or change your payment at any time."]]]
+       (when config
+         (PayButton config))
 
-     [:section.payment-section
-      [:h2 "Once a day (debug)"]
-      [:div.payments
-       (PayButton {:freq "day" :amount 100 :currency "UAH"})
-       (PayButton {:freq "day"})]]]))
+       (when schedule
+         [:section
+          (-ScheduleItem schedule)])
+
+       #_(when-let [cards (seq (db/q (user-cards-q)))]
+           [:section
+            [:h2 #t "Your cards"]
+            [:div
+             (for [card cards]
+               [:div (card-fmt (:card_pan card))
+                " — "
+                (t/short (:created_at card))])]])
+
+       (when (or (not schedule)
+                 (:paused_at schedule))
+         (PaymentSection))
+
+       (when (:daily utils/*ctx*)
+         [:section.payment-section
+          [:h2 "Once a day (debug)"]
+          [:div.payments
+           (PayButton {:freq "day" :amount 100 :currency "UAH"})
+           (PayButton {:freq "day"})]])])))
 
 
 (defn PaymentSuccess []
@@ -179,12 +185,20 @@
 
 ;;; Handlers
 
-(defn dash [_req]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (if (auth/uid)
-              (DashPage)
-              (utils/msg-redir "unauthenticated"))})
+(defn dash
+  {:parameters {:query [:map
+                        [:config {:optional true} string?]
+                        [:daily {:optional true} any?]]}}
+
+  [{:keys [query-params]}]
+
+  (utils/ctx {:daily (contains? query-params :daily)}
+    (let [config (:config query-params)]
+      {:status  200
+       :headers {"Content-Type" "text/html"}
+       :body    (if (auth/uid)
+                  (DashPage config)
+                  (utils/msg-redir "unauthenticated"))})))
 
 
 (defn result
@@ -203,7 +217,8 @@
   [{:keys [form-params]}]
 
   (if (bl.fondy/set-paused! (auth/uid) (:id form-params))
-    {:status  200
+    (utils/redir "/dash")
+    #_{:status  200
      :headers {"Content-Type" "text/html"}
      :body    (ScheduleItem (:id form-params))}
     {:status  200
@@ -218,6 +233,8 @@
   [{:keys [form-params]}]
 
   (bl.fondy/set-resumed! (auth/uid) (:id form-params))
+  (utils/redir "/dash")
+  #_
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (ScheduleItem (:id form-params))})

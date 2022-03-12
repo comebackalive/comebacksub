@@ -14,7 +14,10 @@
 ;;; Arithmetic
 
 (defn +days   [^long amount ^Instant t] (.plus t amount ChronoUnit/DAYS))
-(defn +months [^long amount ^Instant t] (.plus t amount ChronoUnit/MONTHS))
+(defn +months [^long amount ^Instant t]
+  (let [ldt (LocalDateTime/ofInstant t ZoneOffset/UTC)]
+    (-> (.plus ldt amount ChronoUnit/MONTHS)
+        (.toInstant ZoneOffset/UTC))))
 
 
 (defn ^Instant at-midnight

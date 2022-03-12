@@ -103,9 +103,12 @@
 (defn coerce [handler]
   (fn [req]
     (try
-      (let [m       (:match req)
-            coerced (coercion/coerce-request (:result m) req)
-            data    (into {} (for [[k v] coerced]
+      (let [m        (:match req)
+            coercers (if (= (:request-method req) :get)
+                       (select-keys (:result m) [:query])
+                       (:result m))
+            coerced  (coercion/coerce-request coercers req)
+            data     (into {} (for [[k v] coerced]
                                (case k
                                  :form      [:form-params v]
                                  :query     [:query-params v]
@@ -174,7 +177,8 @@
          :responses {:not-modified-responses true
                      :content-types          true
                      :default-charset        "utf-8"}})
-      (sentry/wrap-report-exceptions nil)))
+      ;(sentry/wrap-report-exceptions nil)
+      ))
 
 
 (mount/defstate server

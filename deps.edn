@@ -11,8 +11,7 @@
   mount/mount                {:mvn/version "0.1.16"}
   hiccup/hiccup              {:mvn/version "2.0.0-alpha2"}
   org.clojure/core.incubator {:mvn/version "0.1.4"}
-  buddy/buddy-sign           {:mvn/version "3.4.333"}
-  mvxcvi/alphabase           {:mvn/version "2.1.1"}
+  jstrutz/hashids            {:mvn/version "1.0.1"}
   pandect/pandect            {:mvn/version "1.0.2"}
   github.akovantsev/blet     {:git/url "https://github.com/akovantsev/blet"
                               :sha     "2efe35f8e6ba7be81518f63fa6785d76e0ae61a4"}

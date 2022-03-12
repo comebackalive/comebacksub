@@ -19,6 +19,7 @@
 (def POST-URL "https://pay.fondy.eu/api/checkout/url/")
 (def RECURRING-URL "https://pay.fondy.eu/api/recurring")
 
+
 (defn sign [ctx]
   (let [s      (->> (sort ctx)
                     (map val)
@@ -227,7 +228,7 @@
               (db/one (update-settings-q (assoc settings :id (:id payload))))
               ;; we're allowing only one schedule per user right now
               (db/one (upsert-settings-q settings)))))
-        (email/receipt! (:email (auth/get-user (:user_id payload)))
+        (email/receipt! (:email (auth/id->user (:user_id payload)))
           {:amount          amount
            :currency        actual_currency
            :next_payment_at next-payment-at})))))

@@ -22,10 +22,11 @@
                   :MessageStream "outbound"})}))
 
 
-(defn email-auth! [email]
-  (let [url (format "https://%s/login/%s"
-              (config/DOMAIN)
-              (auth/email->token email))]
+(defn email-auth! [email data]
+  (let [token (auth/make-token (assoc data :email email))
+        url   (format "https://%s/login/%s"
+                (config/DOMAIN)
+                token)]
     (send! {:to       email
             :template "login"
             :data     {:action_url    url

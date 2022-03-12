@@ -3,7 +3,8 @@
   (:require [clojure.walk :as walk]
             [org.httpkit.client :as http]
             [cheshire.core :as json]
-            [uapatron.config :as config]))
+            [uapatron.config :as config]
+            [ring.util.codec :as codec]))
 
 
 (set! *warn-on-reflection* true)
@@ -39,7 +40,24 @@
     (string? value)  (try (Long/parseLong ^String value 10)
                           (catch Exception _ nil))))
 
+;;; Context
+
+(def ^:dynamic *ctx* nil)
+
+
+(defmacro ctx [ctx-data & body]
+  `(binding [*ctx* (merge *ctx* ~ctx-data)]
+     ~@body))
+
+
 ;;; HTTP
+
+
+(defn route [path qs]
+  (if (empty? qs)
+    path
+    (str path "?" (codec/form-encode qs))))
+
 
 (defn post!
   ([url] (post! url nil))
