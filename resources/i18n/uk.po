@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version:\n"
-"PO-Revision-Date: 2022-03-10 10:35+0200\n"
+"PO-Revision-Date: 2022-03-12 19:17+0200\n"
 "Last-Translator:\n"
 "Language-Team:\n"
 "Language: uk\n"
@@ -16,11 +16,35 @@ msgstr ""
 "    plural=n%10==1 && n%100!=11 ? 0 : \\\n"
 "           n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
+#: src/uapatron/ui/base.clj
+msgid "About cooperation:"
+msgstr "Щодо співпраці:"
+
+#: src/uapatron/ui/index.clj
+msgid "Authentication link has been sent to"
+msgstr "Посилання для авторизації було відправлено на"
+
+#: src/uapatron/ui/payment.clj
+msgid "Continue to payment"
+msgstr "Перейти на оплату"
+
+#: src/uapatron/ui/base.clj
+msgid "DEFEND UKRAINE TOGETHER"
+msgstr "ЗАХИСТИМО УКРАЇНУ РАЗОМ"
+
+#: src/uapatron/ui/index.clj
+msgid "Enter your email"
+msgstr "Введіть свій ємейл"
+
+#: src/uapatron/ui/base.clj
+msgid "For appeals from the military:"
+msgstr "Для звернень від військових:"
+
 #: src/uapatron/ui/payment.clj
 msgid "From card "
 msgstr "З картки "
 
-#: src/uapatron/ui/index.clj
+#: src/uapatron/ui/base.clj src/uapatron/ui/index.clj
 msgid "Login"
 msgstr "Увійти"
 
@@ -39,6 +63,10 @@ msgstr "Зупинити підписку"
 #: src/uapatron/ui/payment.clj
 msgid "Please contact developers"
 msgstr "Будь ласка, зв'яжіться з розробниками"
+
+#: src/uapatron/ui/index.clj
+msgid "Please open the link to log in - it's going to be valid for 30 minutes."
+msgstr "Будь ласка, відкрийте посилання, щоб увійти — воно буде працювати 30 хвилин."
 
 #: src/uapatron/ui/payment.clj
 msgid "Resume subscription"
@@ -60,70 +88,46 @@ msgstr "Підписатися на щомісячний платіж"
 msgid "Subscription is paused"
 msgstr "Підписка призупинена"
 
-#: src/uapatron/ui/base.clj
-msgid "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."
-msgstr "Фонд «Повернись живим» нічим не відрізняється від звичайних українців. Ми, як і всі, люди, яким у 2014 році довелося змінити свій спосіб життя."
-
-#: src/uapatron/ui/payment.clj
-msgid "Your cards"
-msgstr "Ваші картки"
-
-#: src/uapatron/ui/payment.clj
-msgid "Your sum"
-msgstr "Інша сума"
-
-#: src/uapatron/ui/payment.clj
-msgid "in month"
-msgstr "в місяць"
-
-#: src/uapatron/ui/payment.clj
-msgid "per day"
-msgstr "на день"
-
 #: src/uapatron/ui/payment.clj
 msgid "Support is updated automatically monthly."
 msgstr "Підтримка оновлюється автоматично щомісяця."
+
+#: src/uapatron/ui/base.clj
+msgid "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."
+msgstr "Фонд «Повернись живим» нічим не відрізняється від звичайних українців. Ми, як і всі, люди, яким у 2014 році довелося змінити свій спосіб життя."
 
 #: src/uapatron/ui/payment.clj
 msgid "You can cancel the automatic renewal or change your payment at any time."
 msgstr "Ви можете в будь-який час скасувати автоматичне поновлення або змінити свій платіж."
 
 #: src/uapatron/ui/payment.clj
-msgid "Your monthly support"
-msgstr "Ваша щомісячна підтримка"
+msgid "Your cards"
+msgstr "Ваші картки"
 
 #: src/uapatron/ui/payment.clj
 msgid "Your daily support"
 msgstr "Ваша щоденна підтримка"
 
-#: src/uapatron/ui/index.clj
-msgid "~[:h2 \"IT'S NOT TOO LATE.\" [:br] \"WE NEED YOUR SUPPORT NOW MORE THAN EVER\"]"
-msgstr "~[:h2 \"УКРАЇНІ ПОТРІБНА ВАША ДОПОМОГА. ЗАРАЗ ЧАС ДЛЯ ДІЇ. КОЖНА \" [:br] \" ГРИВНЯ ДОПОМАГАЄ ЗБЕРЕГТИ ЧИЄСЬ ЖИТТЯ.\"]"
+#: src/uapatron/ui/payment.clj
+msgid "Your monthly support"
+msgstr "Ваша щомісячна підтримка"
+
+#: src/uapatron/ui/payment.clj
+msgid "Your sum"
+msgstr "Інша сума"
+
+#: src/uapatron/ui/payment.clj
+msgid "per day"
+msgstr "на день"
+
+#: src/uapatron/ui/payment.clj
+msgid "per month"
+msgstr "на місяць"
 
 #: src/uapatron/ui/payment.clj
 msgid "~[:h1 \"Hello, \" (:email (auth/user))]"
 msgstr "~[:h1 \"Привіт, \" (:email (auth/user))]"
 
 #: src/uapatron/ui/index.clj
-msgid "Authentication link has been sent to"
-msgstr "Посилання для авторизації було відправлено на"
-
-#: src/uapatron/ui/index.clj
-msgid "Please open the link to log in - it's going to be valid for 5 minutes."
-msgstr "Будь ласка, відкрийте посилання, щоб увійти — воно буде працювати 5 хвилин."
-
-#: src/uapatron/ui/index.clj
-msgid "DEFEND UKRAINE TOGETHER"
-msgstr "ЗАХИСТИМО УКРАЇНУ РАЗОМ"
-
-#: src/uapatron/ui/index.clj
-msgid "For appeals from the military:"
-msgstr "Для звернень від військових:"
-
-#: src/uapatron/ui/index.clj
-msgid "About cooperation:"
-msgstr "Щодо співпраці:"
-
-#: src/uapatron/ui/index.clj
-msgid "Enter your email"
-msgstr "Введіть свій Email, для підтвердження"
+msgid "~[:h2 \"IT'S NOT TOO LATE.\" [:br] \"WE NEED YOUR SUPPORT NOW MORE THAN EVER\"]"
+msgstr "~[:h2 \"УКРАЇНІ ПОТРІБНА ВАША ДОПОМОГА. ЗАРАЗ ЧАС ДЛЯ ДІЇ. КОЖНА \" [:br] \" ГРИВНЯ ДОПОМАГАЄ ЗБЕРЕГТИ ЧИЄСЬ ЖИТТЯ.\"]"
