@@ -55,7 +55,7 @@
 
 ;;; test cards: https://docs.fondy.eu/en/docs/page/2/
 
-(defn PayButton [{:keys [freq amount currency]}]
+(defn PayButton [{:keys [freq amount currency continue]}]
   [:div.payments__item
    [:form {:method "post"
            :action "/api/go-to-payment"}
@@ -76,7 +76,10 @@
         [:span #t "per month"])]
      [:input {:type "hidden" :name "currency" :value currency}]
      [:input {:type "hidden" :name "freq" :value freq}]
-     [:button.payments__item-btn #t "Subscribe"]]]])
+     [:button.payments__item-btn
+      (if continue
+        #t "Continue to payment"
+        #t "Subscribe")]]]])
 
 
 (def UK-DURATION
@@ -193,7 +196,10 @@
   [{:keys [query-params]}]
 
   (utils/ctx {:daily (contains? query-params :daily)}
-    (let [config (:config query-params)]
+    (let [config (try (-> (edn/read-string (:config query-params))
+                          (assoc :continue true))
+                      (catch Exception _
+                        nil))]
       {:status  200
        :headers {"Content-Type" "text/html"}
        :body    (if (auth/uid)

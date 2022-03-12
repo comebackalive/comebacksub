@@ -52,8 +52,9 @@
            "063 597 15 31 (Lifecell)" [:br]
            "095 055 34 37 (Vodafone)"]]]
         [:li.header__logout
-         (when (auth/uid)
-           [:a.header__logout-btn {:href "/logout"} #t "Logout"])
+         (if (auth/uid)
+           [:a.header__logout-btn {:href "/logout"} #t "Logout"]
+           [:a.header__logout-btn {:href "/login"} #t "Login"])
          [:div.header__select-lang
           (if (= kasta.i18n/*lang* "uk")
             [:a.header__lang-item {:href "/lang/en"} "EN"]

@@ -61,8 +61,9 @@
   [{:keys [form-params query-params request-method]}]
 
   (if (= request-method :post)
-    (do
-      (email/email-auth! (:email form-params) {:config (:config form-params)})
+    (let [config (:config form-params)]
+      (email/email-auth! (:email form-params)
+        (when config {:config config}))
       {:status  200
        :headers {"Content-Type" "text/html"}
        :body    (LoginSent {:email (:email form-params)})})
