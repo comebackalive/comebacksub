@@ -40,8 +40,7 @@
 (defn make-desc
   ([freq amount currency] (make-desc freq amount currency nil))
   ([freq amount currency recurrent]
-   (let [amount (/ amount 100)
-         fmt (if recurrent
+   (let [fmt (if recurrent
                "Donation to Come Back Alive (%s %s %sly) - regular payment"
                "Donation to Come Back Alive (%s %s %sly)")]
      (format fmt amount currency freq))))
@@ -71,7 +70,7 @@
    :order_desc          (make-desc freq amount currency)
    :merchant_id         (config/MERCHANT-ID)
    :currency            currency
-   :amount              amount
+   :amount              (* amount 100)
    :merchant_data       (pr-str {:user_id (:id user)
                                  :freq    freq})
    :required_rectoken   "Y"
@@ -105,7 +104,7 @@
    :order_desc          (make-desc frequency amount currency true)
    :merchant_id         (config/MERCHANT-ID)
    :currency            currency
-   :amount              amount
+   :amount              (* amount 100)
    :merchant_data       (pr-str {:user_id   user_id
                                  :freq      frequency
                                  :id        id
@@ -193,7 +192,8 @@
            merchant_data
            order_id]
     :as   resp}]
-  (let [payload         (edn/read-string merchant_data)
+  (let [amount          (int (/ (utils/parse-int amount) 100))
+        payload         (edn/read-string merchant_data)
         card            {:user_id          (:user_id payload)
                          :token            rectoken
                          :token_expires_at (when (not-empty rectoken_lifetime)
@@ -210,12 +210,12 @@
                       :frequency       (:freq payload)
                       :next_payment_at next-payment-at
                       :paused_at       nil
-                      :amount          (utils/parse-int amount)
+                      :amount          amount
                       :currency        (db/->currency-type actual_currency)}]
         (db/tx
           (db/q (save-transaction-q
                   {:transaction (utils/parse-uuid order_id)
-                   :amount      (utils/parse-int amount)
+                   :amount      amount
                    :order_id    order_id
                    :card_id     card-id
                    :user_id     (:user_id payload)
@@ -228,7 +228,7 @@
               ;; we're allowing only one schedule per user right now
               (db/one (upsert-settings-q settings)))))
         (email/receipt! (:email (auth/get-user (:user_id payload)))
-          {:amount          (int (/ (utils/parse-int amount) 100))
+          {:amount          amount
            :currency        actual_currency
            :next_payment_at next-payment-at})))))
 
@@ -239,11 +239,12 @@
                   order_id
                   merchant_data]
            :as   resp}]
-  (let [payload (edn/read-string merchant_data)]
+  (let [payload (edn/read-string merchant_data)
+        amount  (when (seq amount)
+                  (int (/ (utils/parse-int amount) 100)))]
     (db/q (save-transaction-q
             {:transaction (utils/parse-uuid order_id)
-             :amount      (when-not (empty? amount)
-                            (utils/parse-int amount))
+             :amount      amount
              :order_id    order_id
              :user_id     (:user_id payload)
              :type        (db/->transaction-type status)

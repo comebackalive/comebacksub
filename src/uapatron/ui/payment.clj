@@ -77,7 +77,7 @@
 
 (defn -ScheduleItem [item]
   (let [paused? (boolean (:paused_at item))
-        amount  (int (/ (:amount item) 100))]
+        amount  (:amount item)]
     (hi/html
       [:div.card.col-4
        #t [:h4 amount " " (:currency item) " every " (:frequency item)]

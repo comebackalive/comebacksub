@@ -26,7 +26,7 @@
          ;; TODO: process exception here (maybe rework exception to Option)
          link   (try (bl.fondy/get-payment-link (auth/user)
                        {:freq     freq
-                        :amount   (* amount 100)
+                        :amount   amount
                         :currency (:currency form-params "UAH")})
                      (catch Exception e
                        {:error e}))]
