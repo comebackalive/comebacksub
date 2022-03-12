@@ -129,22 +129,13 @@
      [:h4 #t "Some error happened"]
      [:p #t "Please contact developers"]]))
 
-(def s
-  [{:card_pan "444455XXXXXX1111",
-    :id 1,
-    :next_payment_at "2022-03-12T12:05:50.412370Z"
-    :frequency "day"
-    :paused_at nil
-    :amount 20000
-    :currency "UAH"
-    :created_at "2022-03-05T06:26:04.123916Z"}])
 
 (defn DashPage []
   (base/wrap
     [:div.container
      #t [:h1 "Hello, " (:email (auth/user))]
 
-     (when-let [items s #_(seq (db/q (user-schedule-q)))]
+     (when-let [items (seq (db/q (user-schedule-q)))]
        [:section
         #_[:h2 #t "Your subscription"]
         [:div

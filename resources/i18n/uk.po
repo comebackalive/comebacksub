@@ -69,10 +69,6 @@ msgid "Your cards"
 msgstr "Ваші картки"
 
 #: src/uapatron/ui/payment.clj
-msgid "Your subscription"
-msgstr "Ваша підписка"
-
-#: src/uapatron/ui/payment.clj
 msgid "Your sum"
 msgstr "Інша сума"
 
@@ -107,10 +103,6 @@ msgstr "~[:h2 \"УКРАЇНІ ПОТРІБНА ВАША ДОПОМОГА. ЗА�
 #: src/uapatron/ui/payment.clj
 msgid "~[:h1 \"Hello, \" (:email (auth/user))]"
 msgstr "~[:h1 \"Привіт, \" (:email (auth/user))]"
-
-#: src/uapatron/ui/payment.clj
-msgid "~[:h4 amount \" \" (:currency item) \" every \" (:frequency item)]"
-msgstr "~[:h4 amount \" \" (:currency item) \" кожен \" (UK-DURATION (:frequency item))]"
 
 #: src/uapatron/ui/index.clj
 msgid "Authentication link has been sent to"
