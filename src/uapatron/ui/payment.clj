@@ -88,12 +88,23 @@
   (let [paused? (boolean (:paused_at item))
         amount  (:amount item)]
     (hi/html
-      [:div.card.col-4
-       #t [:h4 amount " " (:currency item) " every " (:frequency item)]
-       (if paused?
-         [:p #t "Subscription is paused"]
-         [:p #t "Next payment at " (t/short (:next_payment_at item))])
-       [:p #t "From card " (card-fmt (:card_pan item))]
+      [:div {:class (cond-> "subscription"
+                      paused?
+                      (str " paused"))}
+       [:div.subscription__wrap
+        [:div.subscription__icon]
+        [:div.subscription__main
+         [:div.subscription__frequency
+          (if (= (:frequency item) "day")
+            [:span #t "Your daily support"]
+            [:span #t "Your monthly support"])]
+         [:div.subscription__amount amount " " (:currency item)]]]
+       [:div.subscription__details
+        (if paused?
+          [:p #t "Subscription is paused"]
+          [:p #t "Next payment at " (t/short (:next_payment_at item))])
+        [:p #t "From card " (card-fmt (:card_pan item))]]
+
        (if paused?
          [:form {:method    "post"
                  :action    "/payment/resume"
@@ -118,20 +129,29 @@
      [:h4 #t "Some error happened"]
      [:p #t "Please contact developers"]]))
 
+(def s
+  [{:card_pan "444455XXXXXX1111",
+    :id 1,
+    :next_payment_at "2022-03-12T12:05:50.412370Z"
+    :frequency "day"
+    :paused_at nil
+    :amount 20000
+    :currency "UAH"
+    :created_at "2022-03-05T06:26:04.123916Z"}])
 
 (defn DashPage []
   (base/wrap
     [:div.container
      #t [:h1 "Hello, " (:email (auth/user))]
 
-     (when-let [items (seq (db/q (user-schedule-q)))]
+     (when-let [items s #_(seq (db/q (user-schedule-q)))]
        [:section
-        [:h2 #t "Your subscription"]
+        #_[:h2 #t "Your subscription"]
         [:div
          (for [item items]
            (-ScheduleItem item))]])
 
-     (when-let [cards (seq (db/q (user-cards-q)))]
+     #_(when-let [cards (seq (db/q (user-cards-q)))]
        [:section
         [:h2 #t "Your cards"]
         [:div

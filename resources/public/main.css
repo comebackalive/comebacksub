@@ -348,6 +348,7 @@ footer {
   border: none;
   cursor: pointer;
 }
+
 .payments__item-btn:hover {
   background: #43D09C;
   color: #417553;
@@ -362,6 +363,56 @@ footer {
   margin: 32px 0 16px 0;
   text-indent: 16px;
   font-size: 16px;
+}
+
+.subscription {
+  margin: 40px 0;
+}
+
+.subscription__wrap {
+  display: flex;
+  gap: 32px;
+}
+
+.subscription__icon {
+  width: 64px;
+  height: 64px;
+  background: url("./img/100.svg") no-repeat center center;
+}
+
+.subscription__amount {
+  font-size: 36px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  margin-top: 10px;
+}
+
+.subscription__details {
+  margin-top: 40px;
+}
+
+.subscription__details p {
+  line-height: 22px;
+  font-size: 18px;
+}
+
+.subscription button {
+  margin-top: 40px;
+  display: block;
+  padding: 0 40px;
+  line-height: 48px;
+  font-size: 18px;
+  color: #ffffff;
+  background: #38B586;
+  border-radius: 24px;
+  border: none;
+  cursor: pointer;
+}
+
+.subscription button:hover {
+  background: #43D09C;
+  color: #417553;
 }
 
 /* END payments */
@@ -418,14 +469,12 @@ footer {
     margin-left: 0;
     order: 3;
   }
- }
-
- .payments {
-  grid-template-columns: 1fr 1fr;
- }
-
- .footer__inner {
-   flex-direction: column;
+  .payments {
+    grid-template-columns: 1fr 1fr;
+   }
+   .footer__inner {
+     flex-direction: column;
+   }
  }
 
 /* Medium devices (tablets, less than 992px) */

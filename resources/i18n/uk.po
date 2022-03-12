@@ -92,6 +92,13 @@ msgstr "Підтримка оновлюється автоматично щом�
 msgid "You can cancel the automatic renewal or change your payment at any time."
 msgstr "Ви можете в будь-який час скасувати автоматичне поновлення або змінити свій платіж."
 
+#: src/uapatron/ui/payment.clj
+msgid "Your monthly support"
+msgstr "Ваша щомісячна підтримка"
+
+#: src/uapatron/ui/payment.clj
+msgid "Your daily support"
+msgstr "Ваша щоденна підтримка"
 
 #: src/uapatron/ui/index.clj
 msgid "~[:h2 \"IT'S NOT TOO LATE.\" [:br] \"WE NEED YOUR SUPPORT NOW MORE THAN EVER\"]"
