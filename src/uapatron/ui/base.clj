@@ -58,8 +58,7 @@
          [:div.header__select-lang
           (if (= kasta.i18n/*lang* "uk")
             [:a.header__lang-item {:href "/lang/en"} "EN"]
-            [:a.header__lang-item {:href "/lang/uk"} "UK"])]]]]]
-     (message/Messages)]))
+            [:a.header__lang-item {:href "/lang/uk"} "UK"])]]]]]]))
 
 
 (defn footer []
@@ -90,7 +89,9 @@
      (head)
      [:body
       (header)
-      [:main content]
+      [:main
+       (message/Messages)
+       content]
       (footer)]]))
 
 

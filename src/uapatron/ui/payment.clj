@@ -133,18 +133,19 @@
 (defn PaymentSection []
   (hi/html
     [:section.payment-section
-     [:h2 #t "Subscribe for montly payment"]
-     (let [currency config/*currency*
-           preset   (get PRESETS currency)]
-       [:div.payments
-        (for [amount preset]
-          (PayButton {:freq "month" :amount amount :currency currency}))
+     [:div.container
+      [:h2 #t "Subscribe for montly payment"]
+      (let [currency config/*currency*
+            preset   (get PRESETS currency)]
+        [:div.payments
+         (for [amount preset]
+           (PayButton {:freq "month" :amount amount :currency currency}))
 
-        (PayButton {:freq "month" :currency currency})])
+         (PayButton {:freq "month" :currency currency})])
 
-     [:div.payment-section__message
-      [:p.t-bold #t "Support is updated automatically monthly."]
-      [:p #t "You can cancel the automatic renewal or change your payment at any time."]]]))
+      [:div.payment-section__message
+       [:p.t-bold #t "Support is updated automatically monthly."]
+       [:p #t "You can cancel the automatic renewal or change your payment at any time."]]]]))
 
 
 (defn DashPage [config]
@@ -179,11 +180,6 @@
           [:div.payments
            (PayButton {:freq "day" :amount 100 :currency "UAH"})
            (PayButton {:freq "day"})]])])))
-
-
-(defn PaymentSuccess []
-  (base/wrap
-    [:h1 "Payment is successful, " (:email (auth/user))]))
 
 
 ;;; Handlers
