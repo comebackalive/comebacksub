@@ -1,13 +1,15 @@
 (ns uapatron.email
   (:require [org.httpkit.client :as http]
             [cheshire.core :as json]
+            [clojure.tools.logging :as log]
 
             [uapatron.config :as config]
             [uapatron.auth :as auth]
             [uapatron.time :as t]))
 
 
-(defn send! [{:keys [to template data]}]
+(defn send! [{:keys [to template data] :as cfg}]
+  (log/info "sending email" cfg)
   @(http/request
      {:method  :post
       :url     "https://api.postmarkapp.com/email/withTemplate"
