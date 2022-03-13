@@ -196,8 +196,8 @@
   [{:keys [query-params]}]
 
   (utils/ctx {:daily (contains? query-params :daily)}
-    (let [config (try (-> (edn/read-string (:config query-params))
-                          (assoc :continue true))
+    (let [config (try (some-> (edn/read-string (:config query-params))
+                        (assoc :continue true))
                       (catch Exception _
                         nil))]
       {:status  200
