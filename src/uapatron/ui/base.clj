@@ -72,7 +72,10 @@
         [:li.header__logout
          (if (auth/uid)
            [:a.header__logout-btn {:href "/logout"} #t "Logout"]
-           [:a.header__logout-btn {:href "/login"} #t "Login"])
+           (list
+             [:a.header__logout-btn {:href "/login"} #t "Login"]
+             [:div {:style "text-align: center"}
+              [:sup #t "to manage subscription"]]))
          [:div.header__select-lang
           (if (= kasta.i18n/*lang* "uk")
             [:a.header__lang-item {:href "/lang/en"} "EN"]

@@ -149,7 +149,6 @@ body {
   display: flex;
   padding: 0;
   margin: 0;
-  font-size: 0;
   list-style: none;
 }
 
@@ -177,7 +176,6 @@ body {
 .header__select-lang {
   display: block;
   width: 138px;
-  margin: 20px 0 0 0;
   text-align: center;
 }
 

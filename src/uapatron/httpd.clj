@@ -35,7 +35,8 @@
 
 
 (defn static [{{:keys [path]} :path-params}]
-  (response/resource-response path {:root "public"}))
+  (-> (response/resource-response path {:root "public"})
+      (assoc-in [:headers "Cache-Control"] "max-age=3600")))
 
 
 (defn routes []
