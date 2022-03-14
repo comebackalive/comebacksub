@@ -134,7 +134,7 @@
   (hi/html
     [:section.payment-section
      [:div.container
-      [:h2 #t "Subscribe for montly payment"]
+      [:h2 #t "Subscribe for monthly payment"]
       (let [currency config/*currency*
             preset   (get PRESETS currency)]
         [:div.payments
