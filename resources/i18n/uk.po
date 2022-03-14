@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version:\n"
-"PO-Revision-Date: 2022-03-14 11:39+0200\n"
+"PO-Revision-Date: 2022-03-14 11:47+0200\n"
 "Last-Translator:\n"
 "Language-Team:\n"
 "Language: uk\n"
@@ -98,7 +98,7 @@ msgstr "Фонд «Повернись живим» нічим не відріз�
 
 #: src/uapatron/ui/index.clj
 msgid "We promise to never spam you. This is for identification so you can manage your subscription, plus for receipts when we charge you."
-msgstr "Ми обіцяємо не спамити. Це тільки для ідентифікації, щоб ви могли керувати своєю підпискою, плюс для чеків — ми будемо надсилати їх після успішних списать грошей"
+msgstr "Ми обіцяємо не спамити. Це тільки для ідентифікації, щоб ви могли керувати своєю підпискою, плюс для чеків — ми будемо надсилати їх після успішного списання грошей."
 
 #: src/uapatron/ui/payment.clj
 msgid "You can cancel the automatic renewal or change your payment at any time."
