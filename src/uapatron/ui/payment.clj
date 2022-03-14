@@ -133,7 +133,7 @@
 (defn PaymentSection []
   (hi/html
     [:section.payment-section
-     [:div.container
+     [:div
       [:h2 #t "Subscribe for monthly payment"]
       (let [currency config/*currency*
             preset   (get PRESETS currency)]

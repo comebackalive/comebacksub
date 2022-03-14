@@ -30,7 +30,7 @@
          [:input {:type "hidden" :name "config" :value config}]
          [:input.subscribe__input {:type "email" :name "email" :id "email" :required true :placeholder "Email"}]
          [:button.subscribe__button {:name "login"} #t "Login"]]
-        [:p {:style "margin: 1rem"}
+        [:p.subscribe__inform
          #t "We promise to never spam you. This is for identification so you can manage your subscription, plus for receipts when we charge you."]]]
       [:div.subscribe__side]]
      [:div.support-us.upper
