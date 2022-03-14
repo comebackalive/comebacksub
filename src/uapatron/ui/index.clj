@@ -33,8 +33,8 @@
         [:p {:style "margin: 1rem"}
          #t "We promise to never spam you. This is for identification so you can manage your subscription, plus for receipts when we charge you."]]]
       [:div.subscribe__side]]
-     [:div.support-us
-      #t [:h2 "IT'S NOT TOO LATE." [:br] "WE NEED YOUR SUPPORT NOW MORE THAN EVER"]]]))
+     [:div.support-us.upper
+      #t [:h2 "It's not too late." [:br] "We need your support now more than ever."]]]))
 
 
 (defn IndexPage []

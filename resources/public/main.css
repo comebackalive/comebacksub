@@ -122,27 +122,10 @@ body {
   font-weight: 600;
   line-height: 26px;
   font-size: 22px;
-  letter-spacing: -2px;
 }
 
 .header__by a {
   color: #000000;
-}
-
-.header__contacts {
-  font-size: 15px;
-  line-height: 20px;
-  margin-left: auto;
-}
-
-.header__contacts-wrap {
-  display: grid;
-  grid-template-columns: auto 180px;
-  gap: 4px 8px;
-}
-
-.header__contacts-wrap span:first-child {
-  text-align: right;
 }
 
 .header nav ul {
@@ -154,6 +137,10 @@ body {
 
 .header__logout {
   margin-left: auto;
+}
+
+.header__logout * {
+  display: inline-block;
 }
 
 .header__logout-btn {
@@ -495,6 +482,11 @@ footer {
 /* END payments */
 
 
+.upper {
+  text-transform: uppercase;
+}
+
+
 /* loading indicator */
 
 [aria-busy] {
@@ -598,9 +590,6 @@ footer {
 @media (max-width: 991.98px) { 
   .subscribe {
     grid-template-columns: auto 300px;
-  }
-  .header__contacts {
-    display: none;
   }
   .subscribe__input {
     width: 280px;

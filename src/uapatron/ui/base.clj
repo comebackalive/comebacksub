@@ -58,17 +58,9 @@
         [:li.header__by
          [:span #t "DEFEND UKRAINE TOGETHER"]
          [:span "by "]
-         [:a {:href "https://comebackalive.in.ua/" :target "_blank"} "comebackalive.in.ua"]]
-        [:li.header__contacts
-         [:span.header__contacts-wrap
-          [:span #t "For appeals from the military:"]
-          [:span "068 500 88 00"]]
-         [:span.header__contacts-wrap
-          [:span #t "About cooperation:"]
-          [:span
-           "068 359 63 80 (Kyivstar)" [:br]
-           "063 597 15 31 (Lifecell)" [:br]
-           "095 055 34 37 (Vodafone)"]]]
+         [:a {:href "https://comebackalive.in.ua/"}
+          "comebackalive.in.ua"]]
+
         [:li.header__logout
          (if (auth/uid)
            [:a.header__logout-btn {:href "/logout"} #t "Logout"]
@@ -91,8 +83,9 @@
         [:div
          [:a.footer__logo {:href "/" :title "COME BACK ALIVE"}
           [:img {:src (static "img/logo.png")}]]
-         [:span "©2022 by "]
-         [:a {:href "https://www.comebackalive.in.ua/" :target "_blank"} "comebackalive.in.ua"]
+         [:span "© 2022 by "]
+         [:a {:href "https://www.comebackalive.in.ua/"}
+          "comebackalive.in.ua"]
          [:span " NGO"]]]
        [:div.footer__social
         [:p #t "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."]
