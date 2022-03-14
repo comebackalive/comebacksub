@@ -35,7 +35,8 @@
     (throw (ex-info "Bad signature, check credentials" ctx))))
 
 
-(defn make-order-id [] (utils/uuid))
+(defn make-order-id []
+  (str "SUB-" (utils/uuid)))
 
 
 (defn make-desc
