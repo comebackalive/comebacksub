@@ -17,7 +17,7 @@
                 "Content-Type"            "application/json"
                 "X-Postmark-Server-Token" (config/POSTMARK)}
       :body    (json/generate-string
-                 {:From          "a@solovyov.net"
+                 {:From          "support@comebackalive.in.ua"
                   :To            to
                   :TemplateAlias template
                   :TemplateModel data
