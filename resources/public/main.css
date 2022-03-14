@@ -335,15 +335,19 @@ footer {
 
 /* payments */
 
+.payment-page h1 {
+  margin: 36px 0;
+}
+
 .payment-section {
-  margin: 20px 0;
+  margin-top: 36px;
 }
 
 .payment-section h2 {
   font-size: 36px;
   line-height: 50px;
   padding: 0;
-  margin: 0 0 48px 0;
+  margin: 0 0 36px 0;
 }
 
 .payment-section__message {
@@ -351,7 +355,7 @@ footer {
   font-size: 16px;
   background: rgba(56, 181, 134, 0.08);
   border-radius: 16px;
-  margin-top: 48px;
+  margin: 48px 0;
   text-align: center;
 }
 
@@ -362,6 +366,7 @@ footer {
 }
 
 .payments__item {
+  max-width: 400px;
   background: #FFFFFF;
   box-shadow: 0px 2px 24px rgba(0, 0, 0, 0.02);
   border-radius: 16px;
@@ -527,7 +532,11 @@ footer {
 /* MOBILE */
 
 /* X-Small devices (portrait phones, less than 576px) */
-@media (max-width: 575.98px) { }
+@media (max-width: 575.98px) { 
+  .payments {
+    grid-template-columns: auto;
+   }
+}
 
 /* Small devices (landscape phones, less than 768px) */
 @media (max-width: 767.98px) { 
@@ -557,8 +566,9 @@ footer {
      width: 80%;
    }
   .subscribe {
-    grid-template-columns: auto;
-    gap: 16px;
+    margin: 32px 0 0 0;
+    grid-template-columns: auto !important;
+    gap: 32px;
     padding: 0 !important;
   }
   .subscribe__label {
@@ -571,8 +581,18 @@ footer {
     padding-left: 16px;
     padding-right: 16px;
   }
-  .subscribe {
-    grid-template-columns: auto 180px;
+  .payments__item-wrap {
+    min-height: 320px;
+  }
+  .payments__item-amount {
+    font-size: 28px;
+  }
+  .payments__item-btn {
+    padding: 0 20px;
+    margin: 24px 0;
+  }
+  .payments__item-input {
+    width: 180px;
   }
  }
 

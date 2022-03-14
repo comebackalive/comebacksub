@@ -68,7 +68,7 @@
         [:h4.payments__item-amount amount " " currency]
         [:input {:type "hidden" :name "amount" :value amount}]]
 
-       [:input.payments__item-input {:type "text" :name "amount" :placeholder #t "Your sum"}])
+       [:input.payments__item-input {:type "text" :name "amount" :required true :placeholder #t "Your sum"}])
 
      [:span.payments__item-interval
       (if (= freq "day")
@@ -151,11 +151,12 @@
 (defn DashPage [config]
   (let [schedule (db/one (user-schedule-q))]
     (base/wrap
-      [:div.container
+      [:div.payment-page.container
        #t [:h1 "Hello, " (:email (auth/user))]
 
        (when config
-         (PayButton config))
+         [:div {:style {:margin-bottom "36px"}}
+          (PayButton config)])
 
        (when schedule
          [:section
