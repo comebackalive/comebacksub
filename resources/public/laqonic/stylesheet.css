@@ -1,0 +1,144 @@
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-BoldItalic.eot');
+    src: local('Laqonic 4F Unicase Bold Italic'), local('Laqonic4FUnicase-BoldItalic'),
+        url('Laqonic4FUnicase-BoldItalic.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-BoldItalic.woff2') format('woff2'),
+        url('Laqonic4FUnicase-BoldItalic.woff') format('woff'),
+        url('Laqonic4FUnicase-BoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-MediumItalic.eot');
+    src: local('Laqonic 4F Unicase Medium Italic'), local('Laqonic4FUnicase-MediumItalic'),
+        url('Laqonic4FUnicase-MediumItalic.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-MediumItalic.woff2') format('woff2'),
+        url('Laqonic4FUnicase-MediumItalic.woff') format('woff'),
+        url('Laqonic4FUnicase-MediumItalic.ttf') format('truetype');
+    font-weight: 500;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-Bold.eot');
+    src: local('Laqonic 4F Unicase Bold'), local('Laqonic4FUnicase-Bold'),
+        url('Laqonic4FUnicase-Bold.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-Bold.woff2') format('woff2'),
+        url('Laqonic4FUnicase-Bold.woff') format('woff'),
+        url('Laqonic4FUnicase-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-SemiBold.eot');
+    src: local('Laqonic 4F Unicase SemiBold'), local('Laqonic4FUnicase-SemiBold'),
+        url('Laqonic4FUnicase-SemiBold.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-SemiBold.woff2') format('woff2'),
+        url('Laqonic4FUnicase-SemiBold.woff') format('woff'),
+        url('Laqonic4FUnicase-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-Medium.eot');
+    src: local('Laqonic 4F Unicase Medium'), local('Laqonic4FUnicase-Medium'),
+        url('Laqonic4FUnicase-Medium.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-Medium.woff2') format('woff2'),
+        url('Laqonic4FUnicase-Medium.woff') format('woff'),
+        url('Laqonic4FUnicase-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-Light.eot');
+    src: local('Laqonic 4F Unicase Light'), local('Laqonic4FUnicase-Light'),
+        url('Laqonic4FUnicase-Light.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-Light.woff2') format('woff2'),
+        url('Laqonic4FUnicase-Light.woff') format('woff'),
+        url('Laqonic4FUnicase-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-Italic.eot');
+    src: local('Laqonic 4F Unicase Italic'), local('Laqonic4FUnicase-Italic'),
+        url('Laqonic4FUnicase-Italic.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-Italic.woff2') format('woff2'),
+        url('Laqonic4FUnicase-Italic.woff') format('woff'),
+        url('Laqonic4FUnicase-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase.eot');
+    src: local('Laqonic 4F Unicase'), local('Laqonic4FUnicase'),
+        url('Laqonic4FUnicase.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase.woff2') format('woff2'),
+        url('Laqonic4FUnicase.woff') format('woff'),
+        url('Laqonic4FUnicase.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-Black.eot');
+    src: local('Laqonic 4F Unicase Black'), local('Laqonic4FUnicase-Black'),
+        url('Laqonic4FUnicase-Black.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-Black.woff2') format('woff2'),
+        url('Laqonic4FUnicase-Black.woff') format('woff'),
+        url('Laqonic4FUnicase-Black.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-LightItalic.eot');
+    src: local('Laqonic 4F Unicase Light Italic'), local('Laqonic4FUnicase-LightItalic'),
+        url('Laqonic4FUnicase-LightItalic.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-LightItalic.woff2') format('woff2'),
+        url('Laqonic4FUnicase-LightItalic.woff') format('woff'),
+        url('Laqonic4FUnicase-LightItalic.ttf') format('truetype');
+    font-weight: 300;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-BlackItalic.eot');
+    src: local('Laqonic 4F Unicase Black Italic'), local('Laqonic4FUnicase-BlackItalic'),
+        url('Laqonic4FUnicase-BlackItalic.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-BlackItalic.woff2') format('woff2'),
+        url('Laqonic4FUnicase-BlackItalic.woff') format('woff'),
+        url('Laqonic4FUnicase-BlackItalic.ttf') format('truetype');
+    font-weight: 900;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Laqonic 4F Unicase';
+    src: url('Laqonic4FUnicase-SemiBoldItalic.eot');
+    src: local('Laqonic 4F Unicase SemiBold Italic'), local('Laqonic4FUnicase-SemiBoldItalic'),
+        url('Laqonic4FUnicase-SemiBoldItalic.eot?#iefix') format('embedded-opentype'),
+        url('Laqonic4FUnicase-SemiBoldItalic.woff2') format('woff2'),
+        url('Laqonic4FUnicase-SemiBoldItalic.woff') format('woff'),
+        url('Laqonic4FUnicase-SemiBoldItalic.ttf') format('truetype');
+    font-weight: 600;
+    font-style: italic;
+}
+
