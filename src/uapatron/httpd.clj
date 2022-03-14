@@ -177,8 +177,7 @@
          :responses {:not-modified-responses true
                      :content-types          true
                      :default-charset        "utf-8"}})
-      ;(sentry/wrap-report-exceptions nil)
-      ))
+      (sentry/wrap-report-exceptions nil)))
 
 
 (mount/defstate server

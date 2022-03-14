@@ -191,16 +191,16 @@
 
   [{:keys [query-params]}]
 
-  (utils/ctx {:daily (contains? query-params :daily)}
-    (let [config (try (some-> (edn/read-string (:config query-params))
-                        (assoc :continue true))
-                      (catch Exception _
-                        nil))]
-      {:status  200
-       :headers {"Content-Type" "text/html"}
-       :body    (if (auth/uid)
-                  (DashPage config)
-                  (utils/msg-redir "unauthenticated"))})))
+  (if (auth/uid)
+    (utils/ctx {:daily (contains? query-params :daily)}
+      (let [config (try (some-> (edn/read-string (:config query-params))
+                          (assoc :continue true))
+                        (catch Exception _
+                          nil))]
+        {:status  200
+         :headers {"Content-Type" "text/html"}
+         :body    (DashPage config)}))
+    (utils/msg-redir "unauthenticated")))
 
 
 (defn result

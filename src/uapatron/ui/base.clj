@@ -1,12 +1,30 @@
 (ns uapatron.ui.base
+  (:import [java.util.zip Adler32])
   (:require [hiccup2.core :as hi]
             [hiccup.page :refer [doctype]]
             [kasta.i18n]
 
             [uapatron.auth :as auth]
-            [uapatron.ui.message :as message]))
+            [uapatron.ui.message :as message]
+            [clojure.java.io :as io]))
 
 (set! *warn-on-reflection* true)
+
+
+(defn adler32 [^bytes ba]
+  (-> (doto (Adler32.)
+        (.update ba))
+      .getValue))
+
+
+(def static
+  (memoize
+    (fn [path]
+      (let [data (-> (io/resource (str "public/" path))
+                     io/input-stream
+                     .readAllBytes)]
+        (format "/static/%s?v=%s" path (adler32 data))))))
+
 
 (def SOCIAL
   [["facebook.com" "f.png" "https://www.facebook.com/backandalive"]
@@ -21,11 +39,11 @@
      [:title "Save lives in Ukraine | Come Back Alive"]
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
 
-     [:link {:rel "shortcut icon" :type "image/png" :href "/static/favicon.png"}]
+     [:link {:rel "shortcut icon" :type "image/png" :href (static "favicon.png")}]
      [:link {:rel "stylesheet" :href "https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"}]
      [:link {:rel "stylesheet" :href "https://fonts.googleapis.com/css?family=Roboto"}]
-     [:link {:rel "stylesheet" :href "/static/main.css"}]
-     [:script {:src "/static/twinspark.js" :async true}]]))
+     [:link {:rel "stylesheet" :href (static "main.css")}]
+     #_[:script {:src (static "twinspark.js") :async true}]]))
 
 
 (defn header []
@@ -36,7 +54,7 @@
        [:ul
         [:li
          [:a.header__logo {:href "/" :title "COME BACK ALIVE"}
-          [:img {:src "/static/img/logo.png"}]]]
+          [:img {:src (static "img/logo.png")}]]]
         [:li.header__by
          [:span #t "DEFEND UKRAINE TOGETHER"]
          [:span "by "]
@@ -69,7 +87,7 @@
        [:div.footer__copy
         [:div
          [:a.footer__logo {:href "/" :title "COME BACK ALIVE"}
-          [:img {:src "/static/img/logo.png"}]]
+          [:img {:src (static "img/logo.png")}]]
          [:span "©2022 by "]
          [:a {:href "https://www.comebackalive.in.ua/" :target "_blank"} "comebackalive.in.ua"]
          [:span " NGO"]]]
@@ -79,7 +97,7 @@
          (for [[title img link] SOCIAL]
            [:li [:a {:href link :target "_blank"}
                  [:img {:title title
-                        :src   (str "/static/img/" img)}]]])]]]]]))
+                        :src   (static (str "img/" img))}]]])]]]]]))
 
 
 (defn -wrap [content]
