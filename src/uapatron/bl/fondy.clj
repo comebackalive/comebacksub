@@ -18,6 +18,7 @@
 
 (def POST-URL "https://pay.fondy.eu/api/checkout/url/")
 (def RECURRING-URL "https://pay.fondy.eu/api/recurring")
+(def REFUND-URL "https://pay.fondy.eu/api/reverse/order_id")
 
 
 (defn sign [ctx]
@@ -117,6 +118,14 @@
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
 
 
+(defn make-refund-ctx [{:keys [order_id amount currency msg]}]
+  {:order_id    order_id
+   :currency    currency
+   :amount      (* amount 100)
+   :comment     msg
+   :merchant_id (config/MERCHANT-ID)})
+
+
 (defn save-transaction-q
   [payment-ctx]
   {:insert-into :transaction_log
@@ -163,7 +172,8 @@
 
 
 (comment
-  (println (get-payment-link {:id "1" :email "pmapcat@gmail.com"} "1" "weekly")))
+  (println (get-payment-link {:id "1" :email "pmapcat@gmail.com"}
+             {:freq "weekly" :amount 1 :currency "UAH"})))
 
 
 (def FREQ-MAP
@@ -182,7 +192,8 @@
   [order-id status]
   (db/one {:from   [:transaction_log]
            :select [1]
-           :where  [:and [:= :type (db/->transaction-type status)]
+           :where  [:and
+                    [:= :type (db/->transaction-type status)]
                     [:= :transaction order-id]]}))
 
 
@@ -356,3 +367,27 @@
 
           :else
           (throw (ex-info "Recurrent payment error" res)))))))
+
+
+(defn refund! [order-id]
+  (let [order  (db/one {:from   [:transaction_log]
+                        :select [:user_id
+                                 :order_id
+                                 :currency
+                                 :amount]
+                        :where  [:and
+                                 [:= :order_id order-id]
+                                 [:= :type (db/->transaction-type :Approved)]]})
+        ctx    (make-refund-ctx order)
+        res    (-> (utils/post! REFUND-URL {:request (sign ctx)})
+                   :response)
+        amount (when (seq (:reversal_amount res))
+                 (int (/ (utils/parse-int (:reversal_amount res)) 100)))]
+    (db/q (save-transaction-q
+            {:amount   amount
+             :order_id order-id
+             :user_id  (:user_id order)
+             :type     (db/->transaction-type :Refunded)
+             :currency (db/->currency-type (:currency order))
+             :data     (db/as-jsonb res)}))
+    res))
