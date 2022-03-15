@@ -62,16 +62,17 @@
           "comebackalive.in.ua"]]
 
         [:li.header__logout
-         (if (auth/uid)
-           [:a.header__logout-btn {:href "/logout"} #t "Logout"]
-           (list
-             [:a.header__logout-btn {:href "/login"} #t "Login"]
-             [:div {:style "text-align: center"}
-              [:sup #t "to manage subscription"]]))
          [:div.header__select-lang
           (if (= kasta.i18n/*lang* "uk")
             [:a.header__lang-item {:href "/lang/en"} "EN"]
-            [:a.header__lang-item {:href "/lang/uk"} "UK"])]]]]]]))
+            [:a.header__lang-item {:href "/lang/uk"} "UK"])]
+
+         (if (auth/uid)
+           [:a.header__logout-btn {:href "/logout"} #t "Logout"]
+           [:div
+            [:a.header__logout-btn {:href "/login"} #t "Login"]
+            [:div.header__logout-text
+             [:span #t "to manage subscription"]]])]]]]]))
 
 
 (defn footer []
@@ -86,7 +87,12 @@
          [:span "© 2022 by "]
          [:a {:href "https://www.comebackalive.in.ua/"}
           "comebackalive.in.ua"]
-         [:span " NGO"]]]
+         [:span " NGO"]]
+        [:div.footer__partner
+         [:span "Payment partner "]
+         [:a {:href "https://fondy.io/" :target "_blank"}
+          [:img {:src (static "img/fondy_logo_square.png")}]
+          "fondy.eu"]]]
        [:div.footer__social
         [:p #t "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."]
         [:ul.footer__icons

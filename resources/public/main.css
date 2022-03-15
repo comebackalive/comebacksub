@@ -140,10 +140,13 @@ body {
 
 .header__logout {
   margin-left: auto;
+  display: flex;
 }
 
-.header__logout * {
-  display: inline-block;
+.header__logout-text {
+  margin-top: 8px;
+  font-size: 14px;
+  text-align: center;
 }
 
 .header__logout-btn {
@@ -165,7 +168,8 @@ body {
 
 .header__select-lang {
   display: block;
-  width: 138px;
+  width: 90px;
+  line-height: 48px;
   text-align: center;
 }
 
@@ -204,6 +208,23 @@ footer {
 
 .footer__logo img {
   width: 144px;
+}
+
+.footer__partner {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.footer__partner img {
+  width: 24px;
+  margin: 0 8px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.footer__partner a {
+  text-decoration: none;
 }
 
 .footer__copy a {
