@@ -39,6 +39,12 @@
       (assoc-in [:headers "Cache-Control"] "max-age=3600")))
 
 
+(defn version [_req]
+  {:status  200
+   :headers {"Content-Type" "text/plain"}
+   :body    @(requiring-resolve 'uapatron.main/VERSION)})
+
+
 (defn routes []
   [["/" #'ui.index/index]
    ["/dash" #'ui.payment/dash]
@@ -52,6 +58,7 @@
    ["/payment/result" #'ui.payment/result]
    ["/api/payment-callback" #'api.payment/payment-callback]
    ["/api/go-to-payment" #'api.payment/go-to-payment]
+   ["/version" #'version]
    ["/static/{*path}" #'static]])
 
 
