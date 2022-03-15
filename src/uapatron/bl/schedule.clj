@@ -23,7 +23,7 @@
               [:not= :ps.amount nil]
               [:not= :ps.card_id nil]]
    :order-by [[:ps.id :desc]]
-   :limit    1000})
+   :limit    100})
 
 
 (defn process-scheduled!
