@@ -7,7 +7,7 @@
             [kasta.i18n]
 
             [uapatron.httpd]
-            [uapatron.bl.schedule]
+            [uapatron.bl.schedule :as schedule]
             [uapatron.db]
             [uapatron.config :as config]
             [clojure.java.io :as io]))
@@ -28,7 +28,7 @@
 
 
 (mount/defstate schedule
-  :start (uapatron.bl.schedule/run-schedule)
+  :start (schedule/run-schedule)
   :stop  (schedule))
 
 

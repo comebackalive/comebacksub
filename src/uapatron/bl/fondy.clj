@@ -55,6 +55,7 @@
             [:cards :c] [:= :ps.card_id :c.id]]
    :select [[:u.id :user_id]
             [:u.email :user_email]
+            [:ps.id :id]
             :ps.currency
             :ps.frequency
             :ps.begin_charging_at
@@ -120,7 +121,7 @@
   [payment-ctx]
   {:insert-into :transaction_log
    :values      [payment-ctx]
-   :returning   [:transaction]})
+   :returning   [:order_id]})
 
 
 (defn upsert-card-q
@@ -216,9 +217,8 @@
                       :currency        (db/->currency-type actual_currency)}]
         (db/tx
           (db/q (save-transaction-q
-                  {:transaction (utils/parse-uuid order_id)
+                  {:order_id    order_id
                    :amount      amount
-                   :order_id    order_id
                    :card_id     card-id
                    :user_id     (:user_id payload)
                    :type        (db/->transaction-type :Approved)
@@ -245,8 +245,7 @@
         amount  (when (seq amount)
                   (int (/ (utils/parse-int amount) 100)))]
     (db/q (save-transaction-q
-            {:transaction (utils/parse-uuid order_id)
-             :amount      amount
+            {:amount      amount
              :order_id    order_id
              :user_id     (:user_id payload)
              :type        (db/->transaction-type status)
@@ -337,17 +336,24 @@
       (double-charge?
         (:next_payment_at payment-params)
         (:begin_charging_at payment-params))
-      (log/error "Double charge: "
+      (log/error "double charge, skipping"
         {:uid         uid
          :last-charge (:begin_charging_at payment-params)
          :planned     (:next_payment_at payment-params)})
 
       :else
-      (let [ctx (make-recurrent-payment-ctx payment-params)
-            _   (log/debug "fondy ctx" (pr-str ctx))
-            _   (set-begin-charging! uid (:id payment-params))
-            res (-> (utils/post! RECURRING-URL {:request (sign ctx)})
-                  :response)]
-        (if (= "success" (:response_status res))
+      (let [ctx      (make-recurrent-payment-ctx payment-params)
+            _        (log/debug "fondy ctx" (pr-str ctx))
+            started? (set-begin-charging! uid (:id payment-params))
+            res      (when started?
+                       (-> (utils/post! RECURRING-URL {:request (sign ctx)})
+                           :response))]
+        (cond
+          (not started?)
+          (log/error "could not start" {:uid uid :id (:id payment-params)})
+
+          (= "success" (:response_status res))
           (process-transaction! res)
+
+          :else
           (throw (ex-info "Recurrent payment error" res)))))))

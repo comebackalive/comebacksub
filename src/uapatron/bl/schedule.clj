@@ -44,7 +44,7 @@
                (fn []
                  (log/debug "schedule")
                  (if @stop
-                   (log/info "stop")
+                   (log/info "stop: signal")
 
                    (do
                      (try
@@ -54,8 +54,9 @@
                      (try
                        (Thread/sleep 300000)
                        (catch InterruptedException _
-                         (log/info "stop")))
+                         (log/info "sleep interrupt")))
                      (recur)))))]
+    (log/info "starting scheduler")
     (.start t)
     (fn []
       (reset! stop true)

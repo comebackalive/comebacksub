@@ -27,13 +27,6 @@
     nm))
 
 
-(defn parse-uuid
-  [smth]
-  (cond (string? smth) (try (java.util.UUID/fromString smth)
-                            (catch Exception _ nil))
-        (uuid? smth) smth))
-
-
 (defn parse-int [value]
   (cond
     (integer? value) value
