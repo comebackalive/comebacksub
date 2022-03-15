@@ -49,7 +49,7 @@
 
 
 (defn recurrent-payment-q
-  [uid]
+  [id]
   {:from   [[:users :u]]
    :join   [[:payment_settings :ps] [:= :ps.user_id :u.id]
             [:cards :c] [:= :ps.card_id :c.id]]
@@ -63,7 +63,7 @@
             :ps.paused_at
             :ps.amount
             :c.token]
-   :where  [:and [:= :u.id uid]
+   :where  [:and [:= :ps.id id]
             #_[:= :c.is_deleted nil]]})
 
 
@@ -324,20 +324,19 @@
     (processor params)))
 
 
-(defn process-recurrent-payment! [uid]
-  (let [payment-params (db/one (recurrent-payment-q uid))]
+(defn process-recurrent-payment! [id]
+  (let [payment-params (db/one (recurrent-payment-q id))
+        uid            (:user_id payment-params)]
     (cond
-      (not payment-params)
-      (log/info "not payment params for user" uid)
-
       (paused? payment-params)
-      (log/info "payment is paused, for user" uid)
+      (log/info "payment is paused, for user" (:user_id payment-params))
 
       (double-charge?
         (:next_payment_at payment-params)
         (:begin_charging_at payment-params))
       (log/error "double charge, skipping"
-        {:uid         uid
+        {:id          id
+         :uid         (:user_id payment-params)
          :last-charge (:begin_charging_at payment-params)
          :planned     (:next_payment_at payment-params)})
 

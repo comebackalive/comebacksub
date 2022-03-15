@@ -12,7 +12,7 @@
   (LocalTime/of 12 0))
 
 
-(defn uids-to-charge-q [which-day]
+(defn ids-to-charge-q [which-day]
   {:from     [[:payment_settings :ps]]
    :select   [:ps.id]
    :where    [:and [:< :next_payment_at
@@ -33,7 +33,7 @@
        :yesterday
        :today)))
   ([which-day]
-   (let [ids (db/q (uids-to-charge-q which-day))]
+   (let [ids (db/q (ids-to-charge-q which-day))]
      (doseq [item ids]
        (fondy/process-recurrent-payment! (:id item))))))
 
