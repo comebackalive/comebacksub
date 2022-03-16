@@ -67,12 +67,13 @@
             [:a.header__lang-item {:href "/lang/en"} "EN"]
             [:a.header__lang-item {:href "/lang/uk"} "UK"])]
 
-         (if (auth/uid)
-           [:a.header__logout-btn {:href "/logout"} #t "Logout"]
-           [:div
-            [:a.header__logout-btn {:href "/login"} #t "Login"]
-            [:div.header__logout-text
-             [:span #t "to manage subscription"]]])]]]]]))
+         [:div
+          (if (auth/uid)
+            [:a.header__logout-btn {:href "/logout"} #t "Logout"]
+            (list
+              [:a.header__logout-btn {:href "/login"} #t "Login"]
+              [:div.header__logout-text
+               [:span #t "to manage subscription"]]))]]]]]]))
 
 
 (defn footer []
