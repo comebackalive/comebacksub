@@ -237,7 +237,7 @@
    "refunded"   :Refunded})
 
 
-(defn write-processing!
+(defn write-transaction!
   [{:keys [order_status
            amount
            currency
@@ -265,7 +265,7 @@
   (verify! res)
   (case order_status
     "approved" (process-approved! res)
-    (write-processing! res)))
+    (write-transaction! res)))
 
 
 (defn set-begin-charging!
@@ -369,7 +369,7 @@
 
           (= "success" (:response_status res))
           ;; we just store here and wait for callback for processing
-          (write-processing! res)
+          (write-transaction! res)
 
           :else
           (throw (ex-info "Recurrent payment error"

@@ -222,7 +222,7 @@
 
   [{:keys [params]}]
 
-  (bl.fondy/process-transaction! params)
+  (bl.fondy/write-transaction! params)
   (utils/msg-redir "/dash" "successful-payment"))
 
 
