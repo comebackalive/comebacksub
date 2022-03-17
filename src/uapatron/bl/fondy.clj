@@ -49,25 +49,6 @@
      (format fmt amount currency freq))))
 
 
-(defn recurrent-payment-q
-  [id]
-  {:from   [[:users :u]]
-   :join   [[:payment_settings :ps] [:= :ps.user_id :u.id]
-            [:cards :c] [:= :ps.card_id :c.id]]
-   :select [[:u.id :user_id]
-            [:u.email :user_email]
-            [:ps.id :id]
-            :ps.currency
-            :ps.frequency
-            :ps.begin_charging_at
-            :ps.next_payment_at
-            :ps.paused_at
-            :ps.amount
-            :c.token]
-   :where  [:and [:= :ps.id id]
-            #_[:= :c.is_deleted nil]]})
-
-
 (defn make-link-ctx
   [user {:keys [freq amount currency]}]
   {:order_id            (make-order-id)
@@ -274,6 +255,14 @@
    "approved"   process-approved!})
 
 
+(defn process-transaction!
+  [{:keys [order_status order_id] :as params}]
+  (log/info "incoming data" order_id order_status)
+  (verify! params)
+  (let [processor (get TRANSACT-MAPPING order_status)]
+    (processor params)))
+
+
 (defn set-begin-charging!
   [uid id]
   (->> (db/one (update-settings-q {:id                id
@@ -294,7 +283,6 @@
 
 (defn set-resumed!
   [uid id]
-  (prn uid id)
   (->> (db/one (update-settings-q {:id        id
                                    :user_id   uid
                                    :paused_at nil}))
@@ -327,12 +315,24 @@
                (t/parse-date last-started)) result)))
 
 
-(defn process-transaction!
-  [{:keys [order_status]
-    :as   params}]
-  (verify! params)
-  (let [processor (get TRANSACT-MAPPING order_status)]
-    (processor params)))
+(defn recurrent-payment-q
+  [id]
+  {:from   [[:users :u]]
+   :join   [[:payment_settings :ps] [:= :ps.user_id :u.id]
+            [:cards :c] [:= :ps.card_id :c.id]]
+   :select [[:u.id :user_id]
+            [:u.email :user_email]
+            [:ps.id :id]
+            :ps.currency
+            :ps.frequency
+            :ps.begin_charging_at
+            :ps.next_payment_at
+            :ps.paused_at
+            :ps.amount
+            :c.token]
+   :where  [:and [:= :ps.id id]
+            #_[:= :c.is_deleted nil]]
+   :for    [:update :payment_settings :nowait]})
 
 
 (defn process-recurrent-payment! [id]
@@ -384,7 +384,7 @@
         amount (when (seq (:reversal_amount res))
                  (int (/ (utils/parse-int (:reversal_amount res)) 100)))]
     (db/q (save-transaction-q
-            {:amount   amount
+            {:amount   (or amount 0)
              :order_id order-id
              :user_id  (:user_id order)
              :type     (db/->transaction-type :Refunded)
