@@ -84,7 +84,7 @@
   (fn [req]
     (try
       (let [res (handler req)]
-        (log/info (:request-method req) {:status (:status res) :uri (:uri req)})
+        (log/debug (:request-method req) {:status (:status res) :uri (:uri req)})
         res)
       (catch Exception e
         (log/error (:request-method req) {:uri (:uri req) :error e})
