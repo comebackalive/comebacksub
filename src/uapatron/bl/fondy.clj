@@ -111,7 +111,7 @@
   [payment-ctx]
   {:insert-into :transaction_log
    :values      [payment-ctx]
-   :returning   [:order_id]})
+   :returning   [:id :type :order_id]})
 
 
 (defn upsert-card-q
@@ -146,7 +146,6 @@
         _   (log/debug "fondy ctx" (pr-str ctx))
         res (-> (utils/post! POST-URL {:request (sign ctx)})
                 :response)]
-    (prn res)
     (if (= "success" (:response_status res))
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))
@@ -209,13 +208,14 @@
                       :currency        (db/->currency-type actual_currency)}]
         (db/tx
           (db/q (save-transaction-q
-                  {:order_id    order_id
-                   :amount      amount
-                   :card_id     card-id
-                   :user_id     (:user_id payload)
-                   :type        (db/->transaction-type :Approved)
-                   :currency    (db/->currency-type actual_currency)
-                   :data        (db/as-jsonb resp)}))
+                  {:order_id  order_id
+                   :amount    amount
+                   :card_id   card-id
+                   :user_id   (:user_id payload)
+                   :type      (db/->transaction-type :Approved)
+                   :currency  (db/->currency-type actual_currency)
+                   :data      (db/as-jsonb resp)
+                   :processed true}))
           (when card-id
             (if (:id payload)
               (db/one (update-settings-q (assoc settings :id (:id payload))))
@@ -227,40 +227,45 @@
            :next_payment_at next-payment-at})))))
 
 
+(def STATUS-MAPPING
+  {"created"    :Created
+   "processing" :InProcessing
+   "declined"   :Declined
+   "reversed"   :Voided
+   "expired"    :Expired
+   "approved"   :Approved
+   "refunded"   :Refunded})
+
+
 (defn write-processing!
-  [status {:keys [amount
-                  actual_currency
-                  order_id
-                  merchant_data]
-           :as   resp}]
-  (let [payload (edn/read-string merchant_data)
+  [{:keys [order_status
+           amount
+           actual_currency
+           order_id
+           merchant_data]
+    :as   res}]
+  (let [status  (or (get STATUS-MAPPING order_status)
+                    (throw (ex-info "Uknown status" res)))
+        payload (edn/read-string merchant_data)
         amount  (when (seq amount)
                   (int (/ (utils/parse-int amount) 100)))]
-    (db/q (save-transaction-q
-            {:amount      amount
-             :order_id    order_id
-             :user_id     (:user_id payload)
-             :type        (db/->transaction-type status)
-             :currency    (when-not (empty? actual_currency)
-                            (db/->currency-type actual_currency))
-             :data        (db/as-jsonb resp)}))))
-
-
-(def TRANSACT-MAPPING
-  {"created"    (partial write-processing! :Created)
-   "processing" (partial write-processing! :InProcessing)
-   "declined"   (partial write-processing! :Declined)
-   "reversed"   (partial write-processing! :Voided)
-   "expired"    (partial write-processing! :Expired)
-   "approved"   process-approved!})
+    (db/one (save-transaction-q
+              {:amount   amount
+               :order_id order_id
+               :user_id  (:user_id payload)
+               :type     (db/->transaction-type status)
+               :currency (when-not (empty? actual_currency)
+                           (db/->currency-type actual_currency))
+               :data     (db/as-jsonb res)}))))
 
 
 (defn process-transaction!
-  [{:keys [order_status order_id] :as params}]
+  [{:keys [order_status order_id] :as res}]
   (log/info "incoming data" order_id order_status)
-  (verify! params)
-  (let [processor (get TRANSACT-MAPPING order_status)]
-    (processor params)))
+  (verify! res)
+  (case order_status
+    "approved" (process-approved! res)
+    (write-processing! res)))
 
 
 (defn set-begin-charging!
@@ -363,7 +368,8 @@
           (log/error "could not start" {:uid uid :id (:id payment-params)})
 
           (= "success" (:response_status res))
-          (process-transaction! res)
+          ;; we just store here and wait for callback for processing
+          (write-processing! res)
 
           :else
           (throw (ex-info "Recurrent payment error"
@@ -385,10 +391,11 @@
         amount (when (seq (:reversal_amount res))
                  (int (/ (utils/parse-int (:reversal_amount res)) 100)))]
     (db/q (save-transaction-q
-            {:amount   (or amount 0)
-             :order_id order-id
-             :user_id  (:user_id order)
-             :type     (db/->transaction-type :Refunded)
-             :currency (db/->currency-type (:currency order))
-             :data     (db/as-jsonb res)}))
+            {:amount    (or amount 0)
+             :order_id  order-id
+             :user_id   (:user_id order)
+             :type      (db/->transaction-type :Refunded)
+             :currency  (db/->currency-type (:currency order))
+             :data      (db/as-jsonb res)
+             :processed true}))
     res))
