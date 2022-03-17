@@ -332,7 +332,7 @@
             :c.token]
    :where  [:and [:= :ps.id id]
             #_[:= :c.is_deleted nil]]
-   :for    [:update :payment_settings :nowait]})
+   #_#_:for    [:update :payment_settings :nowait]})
 
 
 (defn process-recurrent-payment! [id]
