@@ -51,7 +51,6 @@
                      (try
                        (process-scheduled!)
                        (catch Exception e
-                         (sentry/send-event {:throwable e})
                          (log/error e "cron error")))
                      (try
                        (Thread/sleep 300000)
