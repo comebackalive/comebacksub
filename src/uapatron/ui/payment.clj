@@ -74,9 +74,10 @@
        [:input.payments__item-input {:type "text" :name "amount" :required true :placeholder #t "Your sum"}])
 
      [:span.payments__item-interval
-      (if (= freq "day")
-        [:span #t "per day"]
-        [:span #t "per month"])]
+      [:span (case freq
+               "day"   #t "per day"
+               "week"  #t "per week"
+               "month" #t "per month")]]
      [:input {:type "hidden" :name "currency" :value currency}]
      [:input {:type "hidden" :name "freq" :value freq}]
      [:button.payments__item-btn
