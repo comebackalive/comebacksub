@@ -1,10 +1,12 @@
 (ns uapatron.utils
   (:import [java.util UUID])
-  (:require [clojure.walk :as walk]
+  (:require [clojure.string :as str]
+            [clojure.walk :as walk]
             [org.httpkit.client :as http]
             [cheshire.core :as json]
-            [uapatron.config :as config]
-            [ring.util.codec :as codec]))
+            [ring.util.codec :as codec]
+
+            [uapatron.config :as config]))
 
 
 (set! *warn-on-reflection* true)
@@ -33,6 +35,22 @@
     (string? value)  (try (Long/parseLong ^String value 10)
                           (catch Exception _ nil))))
 
+(defn -parse-accept-element [^String s]
+  (let [[lang q]      (.split s ";q=")
+        [lang locale] (.split ^String lang "-")]
+    {:lang   lang
+     :locale locale
+     :q      (or (try (Double/parseDouble q)
+                      (catch Exception _ nil))
+                 1.0)}))
+
+
+(defn parse-accept-language [^String s]
+  (when (seq s)
+    (->> (.split s ",")
+         (map -parse-accept-element)
+         (sort-by :q >))))
+
 ;;; Context
 
 (def ^:dynamic *ctx* nil)
@@ -44,7 +62,6 @@
 
 
 ;;; HTTP
-
 
 (defn route [path qs]
   (if (empty? qs)

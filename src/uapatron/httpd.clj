@@ -19,7 +19,8 @@
             [uapatron.ui.index :as ui.index]
             [uapatron.ui.payment :as ui.payment]
             [uapatron.api.payment :as api.payment]
-            [uapatron.ui.message :as message])
+            [uapatron.ui.message :as message]
+            [uapatron.utils :as utils])
   (:import [hiccup.util RawString]))
 
 
@@ -156,8 +157,12 @@
 
 (defn settings-mw [handler]
   (fn [req]
-    (let [lang     (or (config/LANGS (get-in req [:cookies "lang" :value]))
-                       "en")
+    (let [lang (or (config/LANGS (get-in req [:cookies "lang" :value]))
+                   (some
+                     (comp config/LANGS :lang)
+                     (utils/parse-accept-language
+                       (get-in req [:headers "accept-language"])))
+                   "en")
           currency (get {"en" "USD", "uk" "UAH"} lang)]
       (binding [kasta.i18n/*lang* lang
                 config/*currency* currency]
