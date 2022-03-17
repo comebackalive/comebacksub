@@ -179,7 +179,7 @@
 
 (defn process-approved!
   [{:keys [amount
-           actual_currency
+           currency
            rectoken
            rectoken_lifetime
            masked_card
@@ -205,7 +205,7 @@
                       :next_payment_at next-payment-at
                       :paused_at       nil
                       :amount          amount
-                      :currency        (db/->currency-type actual_currency)}]
+                      :currency        (db/->currency-type currency)}]
         (db/tx
           (db/q (save-transaction-q
                   {:order_id  order_id
@@ -213,7 +213,7 @@
                    :card_id   card-id
                    :user_id   (:user_id payload)
                    :type      (db/->transaction-type :Approved)
-                   :currency  (db/->currency-type actual_currency)
+                   :currency  (db/->currency-type currency)
                    :data      (db/as-jsonb resp)
                    :processed true}))
           (when card-id
@@ -223,7 +223,7 @@
               (db/one (upsert-settings-q settings)))))
         (email/receipt! (:email (auth/id->user (:user_id payload)))
           {:amount          amount
-           :currency        actual_currency
+           :currency        currency
            :next_payment_at next-payment-at})))))
 
 
@@ -240,7 +240,7 @@
 (defn write-processing!
   [{:keys [order_status
            amount
-           actual_currency
+           currency
            order_id
            merchant_data]
     :as   res}]
@@ -254,8 +254,8 @@
                :order_id order_id
                :user_id  (:user_id payload)
                :type     (db/->transaction-type status)
-               :currency (when-not (empty? actual_currency)
-                           (db/->currency-type actual_currency))
+               :currency (when-not (empty? currency)
+                           (db/->currency-type currency))
                :data     (db/as-jsonb res)}))))
 
 
