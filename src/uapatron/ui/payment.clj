@@ -12,9 +12,12 @@
 
 
 (def PRESETS
-  {"UAH" [100 200 500 1000]
-   "USD" [10 50 100 300]
-   "EUR" [10 50 100 300]})
+  {:week  {"UAH" [50 200]
+           "USD" [5 20]
+           "EUR" [5 20]}
+   :month {"UAH" [100 200 500 1000]
+           "USD" [10 50 100 300]
+           "EUR" [10 50 100 300]}})
 
 
 ;;; queries
@@ -134,9 +137,18 @@
   (hi/html
     [:section.payment-section.container
      [:div
+      [:h2 #t "Subscribe for weekly payment"]
+      (let [currency config/*currency*
+            preset   (get-in PRESETS [:week currency])]
+        [:div.payments
+         (for [amount preset]
+           (PayButton {:freq "week" :amount amount :currency currency}))
+
+         (PayButton {:freq "week" :currency currency})])
+
       [:h2 #t "Subscribe for monthly payment"]
       (let [currency config/*currency*
-            preset   (get PRESETS currency)]
+            preset   (get-in PRESETS [:month currency])]
         [:div.payments
          (for [amount preset]
            (PayButton {:freq "month" :amount amount :currency currency}))
@@ -144,7 +156,7 @@
          (PayButton {:freq "month" :currency currency})])
 
       [:div.payment-section__message
-       [:p.t-bold #t "Support is updated automatically monthly."]
+       [:p.t-bold #t "Subscription is charged automatically."]
        [:p #t "You can cancel the automatic renewal or change your payment at any time."]]]]))
 
 

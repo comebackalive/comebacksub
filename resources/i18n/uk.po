@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version:\n"
-"PO-Revision-Date: 2022-03-14 15:35+0200\n"
+"PO-Revision-Date: 2022-03-17 15:44+0200\n"
 "Last-Translator:\n"
 "Language-Team:\n"
 "Language: uk\n"
@@ -77,12 +77,16 @@ msgid "Subscribe for monthly payment"
 msgstr "Підписатися на щомісячний платіж"
 
 #: src/uapatron/ui/payment.clj
-msgid "Subscription is paused"
-msgstr "Підписка призупинена"
+msgid "Subscribe for weekly payment"
+msgstr "Підписатися на щотижневий платіж"
 
 #: src/uapatron/ui/payment.clj
-msgid "Support is updated automatically monthly."
-msgstr "Підтримка оновлюється автоматично щомісяця."
+msgid "Subscription is charged automatically."
+msgstr "Кошти за підписку знімаються автоматично."
+
+#: src/uapatron/ui/payment.clj
+msgid "Subscription is paused"
+msgstr "Підписка призупинена"
 
 #: src/uapatron/ui/base.clj
 msgid "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."
