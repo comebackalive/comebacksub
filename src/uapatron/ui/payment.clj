@@ -103,9 +103,11 @@
         [:div.subscription__icon]
         [:div.subscription__main
          [:div.subscription__frequency
-          (if (= (:frequency item) "day")
-            [:span #t "Your daily support"]
-            [:span #t "Your monthly support"])]
+          [:span
+           (case (:frequency item)
+             "day"   #t "Your daily support"
+             "week"  #t "Your weekly support"
+             "month" #t "Your monthly support")]]
          [:div.subscription__amount amount " " (:currency item)]]]
        [:div.subscription__details
         (if paused?
@@ -114,11 +116,11 @@
         [:p #t "From card " (card-fmt (:card_pan item))]]
 
        (if paused?
-         [:form {:method    "post"
-                 :action    "/payment/resume"}
+         [:form {:method "post"
+                 :action "/payment/resume"}
           [:button {:name "id" :value (:id item)} #t "Resume subscription"]]
-         [:form {:method    "post"
-                 :action    "/payment/pause"}
+         [:form {:method "post"
+                 :action "/payment/pause"}
           [:button {:name "id" :value (:id item)} #t "Pause subscription"]])])))
 
 

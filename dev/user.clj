@@ -27,11 +27,11 @@
               res)))))))
 
 
-(defn trans! []
+(defn trans []
   (kasta.i18n/update-codebase! ["src"] "resources/i18n/uk.po"))
 
 
-(defn reload-trans! []
+(defn rtrans []
   (swap! kasta.i18n/TRANSLATIONS empty)
   (refresh))
 
@@ -44,6 +44,6 @@
 
 
 (comment
-  (trans!)
-  (reload-trans!)
+  (trans)
+  (rtrans)
   (add-dep '[com.clojure-goes-fast/clj-async-profiler "0.5.1"]))
