@@ -1,6 +1,7 @@
 (ns uapatron.bl.schedule
   (:import [java.time LocalTime])
   (:require [clojure.tools.logging :as log]
+            [sentry-clj.core :as sentry]
 
             [uapatron.db :as db]
             [uapatron.bl.fondy :as fondy]))
@@ -50,6 +51,7 @@
                      (try
                        (process-scheduled!)
                        (catch Exception e
+                         (sentry/send-event {:throwable e})
                          (log/error e "cron error")))
                      (try
                        (Thread/sleep 300000)
