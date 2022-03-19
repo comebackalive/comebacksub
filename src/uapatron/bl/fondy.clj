@@ -322,12 +322,12 @@
 
 (defn recurrent-payment-q
   [id]
-  {:from   [[:users :u]]
-   :join   [[:payment_settings :ps] [:= :ps.user_id :u.id]
+  {:from   [[:payment_settings :ps]]
+   :join   [[:users :u] [:= :ps.user_id :u.id]
             [:cards :c] [:= :ps.card_id :c.id]]
    :select [[:u.id :user_id]
             [:u.email :user_email]
-            [:ps.id :id]
+            :ps.id
             :ps.currency
             :ps.frequency
             :ps.begin_charging_at
@@ -337,43 +337,44 @@
             :c.token]
    :where  [:and [:= :ps.id id]
             #_[:= :c.is_deleted nil]]
-   #_#_:for    [:update :payment_settings :nowait]})
+   :for    [:update :ps :nowait]})
 
 
 (defn process-recurrent-payment! [id]
-  (let [payment-params (db/one (recurrent-payment-q id))
-        uid            (:user_id payment-params)]
-    (cond
-      (paused? payment-params)
-      (log/info "payment is paused, for user" (:user_id payment-params))
+  (db/tx
+    (let [payment-params (db/one (recurrent-payment-q id))
+          uid            (:user_id payment-params)]
+      (cond
+        (paused? payment-params)
+        (log/info "payment is paused, for user" (:user_id payment-params))
 
-      (double-charge?
-        (:next_payment_at payment-params)
-        (:begin_charging_at payment-params))
-      (log/error "double charge, skipping"
-        {:id          id
-         :uid         (:user_id payment-params)
-         :last-charge (:begin_charging_at payment-params)
-         :planned     (:next_payment_at payment-params)})
+        (double-charge?
+          (:next_payment_at payment-params)
+          (:begin_charging_at payment-params))
+        (log/error "double charge, skipping"
+          {:id          id
+           :uid         (:user_id payment-params)
+           :last-charge (:begin_charging_at payment-params)
+           :planned     (:next_payment_at payment-params)})
 
-      :else
-      (let [ctx      (make-recurrent-payment-ctx payment-params)
-            _        (log/debug "fondy ctx" (pr-str ctx))
-            started? (set-begin-charging! uid (:id payment-params))
-            res      (when started?
-                       (-> (utils/post! RECURRING-URL {:request (sign ctx)})
-                           :response))]
-        (cond
-          (not started?)
-          (log/error "could not start" {:uid uid :id (:id payment-params)})
+        :else
+        (let [ctx      (make-recurrent-payment-ctx payment-params)
+              _        (log/debug "fondy ctx" (pr-str ctx))
+              started? (set-begin-charging! uid (:id payment-params))
+              res      (when started?
+                         (-> (utils/post! RECURRING-URL {:request (sign ctx)})
+                             :response))]
+          (cond
+            (not started?)
+            (log/error "could not start" {:uid uid :id (:id payment-params)})
 
-          (= "success" (:response_status res))
-          ;; we just store here and wait for callback for processing
-          (write-transaction! res)
+            (= "success" (:response_status res))
+            ;; we just store here and wait for callback for processing
+            (write-transaction! res)
 
-          :else
-          (throw (ex-info "Recurrent payment error"
-                   (or res {:wtf true}))))))))
+            :else
+            (throw (ex-info "Recurrent payment error"
+                     (or res {:wtf true})))))))))
 
 
 (defn refund! [order-id]

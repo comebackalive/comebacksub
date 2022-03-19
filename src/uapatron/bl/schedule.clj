@@ -22,7 +22,8 @@
                       :today     [:raw "current_date + 1"]
                       :tomorrow  [:raw "current_date + 2"])]
               [:not= :ps.amount nil]
-              [:not= :ps.card_id nil]]
+              [:not= :ps.card_id nil]
+              [:not= :ps.paused_at nil]]
    :order-by [[:ps.id :desc]]
    :limit    100})
 
