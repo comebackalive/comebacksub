@@ -14,6 +14,10 @@ upgrade:
 
 uber:
 	KASTA_I18N=uk clojure -Srepro -T:build uber
+	@ls target/*.jar
 
 clean:
 	rm -rf target
+
+release:
+	git tag 1.$(shell git rev-list --count HEAD)

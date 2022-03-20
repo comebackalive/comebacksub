@@ -1,8 +1,9 @@
-name: uapatron build
+name: comebacksub build
 
-on:
-  push:
-    branches: [master]
+on: push
+#  push:
+#    branches: [master]
+#    tags: ['*']
 
 jobs:
   build:
@@ -10,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0 # so we can count revs in build.clj
+        fetch-depth: 0 # so that describe --tags works
     - uses: actions/cache@v2.1.7
       with:
         path: ~/.m2
@@ -22,10 +23,11 @@ jobs:
         tools-deps: '1.10.3.1087'
     - name: Build uberjar
       run: make uber
-    - name: "Get tag"
-      run: echo "RELEASE_TAG=$(cat target/classes/VERSION)" >> $GITHUB_ENV
-    - name: Release
+    - name: Get version
+      run: echo "TAG=$(cat target/classes/VERSION)" >> $GITHUB_ENV
+    - name: Publish release
       uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: target/uapatron-*.jar
-        tag_name: ${{ env.RELEASE_TAG }}
+        files: target/comebacksub-${{ env.TAG }}.jar
+        tag_name: ${{ env.TAG }}

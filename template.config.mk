@@ -1,4 +1,4 @@
-export PGURL=postgresql://localhost/uapatron
+export PGURL=postgresql://localhost/comebacksub
 export POSTMARK=
 export SECRET=16 bytes only ok
 export DOMAIN=kukuruku.ngrok.io

@@ -1,12 +1,12 @@
-# Payment subscription service
+# Payment subscription service for Come Back Alive foundation
 
 ## How to develop
 
-Copy `template.config.mk` into `.config.mk` and create `uapatron` database in
+Copy `template.config.mk` into `.config.mk` and create `comebacksub` database in
 local PostgreSQL:
 
 ```
-$ createdb uapatron
+$ createdb comebacksub
 ```
 
 Install clojure cli tools (`brew install clojure` or similar) and after that

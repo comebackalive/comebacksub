@@ -5,8 +5,8 @@
 
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
-(def version (format "1.%s" (b/git-count-revs nil)))
-(def uber-file (format "target/uapatron-%s.jar" version))
+(def version (b/git-process {:git-args "describe --tags"}))
+(def uber-file (format "target/comebacksub-%s.jar" version))
 
 
 (defn clean [_]
