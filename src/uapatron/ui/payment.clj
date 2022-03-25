@@ -224,8 +224,7 @@
 
   [{:keys [params]}]
 
-  (let [res (assoc params :payload (edn/read-string (:merchant_data params)))]
-    (bl.fondy/write-transaction! res))
+  (bl.fondy/write-transaction! params)
   (utils/msg-redir "/dash" "successful-payment"))
 
 

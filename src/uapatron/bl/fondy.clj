@@ -174,6 +174,10 @@
                     [:= :type (db/->transaction-type status)]
                     [:= :transaction order-id]]}))
 
+(defn res->payload [res]
+  (or (:payload res)
+      (edn/read-string (:merchant_data res))))
+
 
 (def STATUS-MAPPING
   {"created"    :Created
@@ -195,10 +199,11 @@
       (:id (db/one (upsert-card-q card))))))
 
 
-(defn write-transaction! [{:keys [order_status amount currency order_id payload]
+(defn write-transaction! [{:keys [order_status amount currency order_id]
                            :as   res}
                           & [{:keys [card-id processed?]}]]
-  (let [status  (or (get STATUS-MAPPING order_status)
+  (let [payload (res->payload res)
+        status  (or (get STATUS-MAPPING order_status)
                     (throw (ex-info "Uknown status" res)))
         amount  (when (seq amount)
                   (int (/ (utils/parse-int amount) 100)))]
@@ -214,10 +219,10 @@
                :processed processed?}))))
 
 
-(defn process-approved!
-  [{:keys [amount currency masked_card payload]
-    :as   res}]
-  (let [amount          (int (/ (utils/parse-int amount) 100))
+(defn process-approved! [{:keys [amount currency masked_card]
+                          :as   res}]
+  (let [payload         (res->payload res)
+        amount          (int (/ (utils/parse-int amount) 100))
         next-payment-at (calculate-next-payment-at (t/now) (:freq payload))]
     (db/tx
       (let [card-id  (upsert-card res)
@@ -234,7 +239,7 @@
           ;; we're allowing only one schedule per user right now
           (db/one (save-settings-q settings)))
         (write-transaction! res
-          {:card-id card-id
+          {:card-id    card-id
            :processed? true})))
     (email/receipt! (:email (auth/id->user (:user_id payload)))
       {:amount          amount
@@ -243,9 +248,10 @@
        :next_payment_at next-payment-at})))
 
 
-(defn process-declined! [{:keys [amount currency masked_card payload]
+(defn process-declined! [{:keys [amount currency masked_card]
                           :as   res}]
-  (let [amount          (int (/ (utils/parse-int amount) 100))
+  (let [payload         (res->payload res)
+        amount          (int (/ (utils/parse-int amount) 100))
         ;; there is an id in payload when it's recurring payment
         next-payment-at (when (:id payload)
                           (calculate-next-payment-at (t/now) "day"))]
@@ -268,7 +274,7 @@
   [{:keys [order_status order_id] :as res}]
   (log/info "incoming data" order_status order_id)
   (verify! res)
-  (let [res (assoc res :payload (edn/read-string (:merchant_data res)))]
+  (let [res (assoc res :payload (res->payload res))]
     (case order_status
       "approved" (process-approved! res)
       "declined" (process-declined! res)
