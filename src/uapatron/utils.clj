@@ -63,22 +63,23 @@
 
 ;;; HTTP
 
-(defn route [path qs]
-  (if (empty? qs)
-    path
-    (str path "?" (codec/form-encode qs))))
+(defn route [path q]
+  (let [q (remove-nils q)]
+    (if (empty? q)
+      path
+      (str path "?" (codec/form-encode q)))))
 
 
 (defn post!
   ([url] (post! url nil))
   ([url body]
-   (-> @(http/request {:method  :post
-                       :url     url
-                       :headers {"Content-Type" "application/json"}
-                       :body    (when body (json/encode body))
-                       :timeout (config/TIMEOUT)})
-       :body
-       (json/parse-string true))))
+   (let [res  @(http/request {:method  :post
+                              :url     url
+                              :headers {"Content-Type" "application/json"}
+                              :body    (when body (json/encode body))
+                              :timeout (config/TIMEOUT)})
+         data (-> res :body (json/parse-string true))]
+     (with-meta (or data {}) {:original res}))))
 
 
 (defn redir [url]

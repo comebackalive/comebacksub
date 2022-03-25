@@ -27,5 +27,14 @@
 (defn Messages []
   (hi/html
     (for [message *messages*]
-      [:p.message (get MESSAGES message message)])))
+      [:p.message (get MESSAGES message message)])
+    (when (seq *messages*)
+      [:script (hi/raw "(function() {
+        if (!location.search) return;
+        var q = new URLSearchParams(location.search);
+        q.delete('message');
+        var qs = q.toString();
+        var url = location.pathname + (qs ? '?' + qs : '');
+        window.history.replaceState(null, null, url);
+      })();")])))
 

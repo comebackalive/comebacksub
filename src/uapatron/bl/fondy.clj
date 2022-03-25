@@ -90,9 +90,9 @@
    :merchant_id         (config/MERCHANT-ID)
    :currency            currency
    :amount              (* amount 100)
-   :merchant_data       (pr-str {:user_id   user_id
+   :merchant_data       (pr-str {:id        id
+                                 :user_id   user_id
                                  :freq      frequency
-                                 :id        id
                                  :recurrent true})
    :rectoken            token
    :sender_email        user_email
@@ -185,50 +185,42 @@
    "refunded"   :Refunded})
 
 
-(defn write-transaction!
-  [{:keys [order_status
-           amount
-           currency
-           order_id
-           merchant_data]
-    :as   res}]
+(defn upsert-card [{:keys [rectoken rectoken_lifetime masked_card payload]}]
+  (when rectoken
+    (let [card    {:user_id          (:user_id payload)
+                   :token            rectoken
+                   :token_expires_at (when (not-empty rectoken_lifetime)
+                                       (t/parse-dt rectoken_lifetime))
+                   :card_pan         masked_card}]
+      (:id (db/one (upsert-card-q card))))))
+
+
+(defn write-transaction! [{:keys [order_status amount currency order_id payload]
+                           :as   res}
+                          & [{:keys [card-id processed?]}]]
   (let [status  (or (get STATUS-MAPPING order_status)
                     (throw (ex-info "Uknown status" res)))
-        payload (edn/read-string merchant_data)
         amount  (when (seq amount)
                   (int (/ (utils/parse-int amount) 100)))]
     (db/one (save-transaction-q
-              {:amount   amount
-               :order_id order_id
-               :user_id  (:user_id payload)
-               :type     (db/->transaction-type status)
-               :currency (when-not (empty? currency)
-                           (db/->currency-type currency))
-               :data     (db/as-jsonb res)}))))
+              {:amount    amount
+               :order_id  order_id
+               :card_id   card-id
+               :user_id   (:user_id payload)
+               :type      (db/->transaction-type status)
+               :currency  (when-not (empty? currency)
+                            (db/->currency-type currency))
+               :data      (db/as-jsonb (dissoc res :payload))
+               :processed processed?}))))
 
 
 (defn process-approved!
-  [{:keys [amount
-           currency
-           rectoken
-           rectoken_lifetime
-           masked_card
-           merchant_data
-           order_id]
-    :as   resp}]
+  [{:keys [amount currency masked_card payload]
+    :as   res}]
   (let [amount          (int (/ (utils/parse-int amount) 100))
-        payload         (edn/read-string merchant_data)
-        card            {:user_id          (:user_id payload)
-                         :token            rectoken
-                         :token_expires_at (when (not-empty rectoken_lifetime)
-                                             (t/parse-dt rectoken_lifetime))
-                         :card_pan         masked_card}
-        next-payment-at (calculate-next-payment-at
-                          (t/now)
-                          (:freq payload))]
+        next-payment-at (calculate-next-payment-at (t/now) (:freq payload))]
     (db/tx
-      (let [card-id  (when rectoken
-                       (:id (db/one (upsert-card-q card))))
+      (let [card-id  (upsert-card res)
             settings (cond-> {:user_id         (:user_id payload)
                               :card_id         card-id
                               :frequency       (:freq payload)
@@ -238,53 +230,49 @@
                               :currency        (db/->currency-type currency)}
                        (:id payload)
                        (assoc :id (:id payload)))]
-        (db/tx
-          (db/q (save-transaction-q
-                  {:order_id  order_id
-                   :amount    amount
-                   :card_id   card-id
-                   :user_id   (:user_id payload)
-                   :type      (db/->transaction-type :Approved)
-                   :currency  (db/->currency-type currency)
-                   :data      (db/as-jsonb resp)
-                   :processed true}))
-          (when card-id
-            ;; we're allowing only one schedule per user right now
-            (db/one (save-settings-q settings))))
-        (email/receipt! (:email (auth/id->user (:user_id payload)))
-          {:amount          amount
-           :currency        currency
-           :masked_card     masked_card
-           :next_payment_at next-payment-at})))))
+        (when card-id
+          ;; we're allowing only one schedule per user right now
+          (db/one (save-settings-q settings)))
+        (write-transaction! res
+          {:card-id card-id
+           :processed? true})))
+    (email/receipt! (:email (auth/id->user (:user_id payload)))
+      {:amount          amount
+       :currency        currency
+       :masked_card     masked_card
+       :next_payment_at next-payment-at})))
 
 
-(defn process-declined! [{:keys [amount currency masked_card merchant_data]
+(defn process-declined! [{:keys [amount currency masked_card payload]
                           :as   res}]
   (let [amount          (int (/ (utils/parse-int amount) 100))
-        payload         (edn/read-string merchant_data)
         ;; there is an id in payload when it's recurring payment
         next-payment-at (when (:id payload)
                           (calculate-next-payment-at (t/now) "day"))]
-    (when (:id payload)
-      (db/one (save-settings-q {:id              (:id payload)
-                                :next_payment_at next-payment-at})))
-
+    (db/tx
+      (let [card-id (upsert-card res)]
+        (when next-payment-at
+          (db/one (save-settings-q {:id              (:id payload)
+                                    :next_payment_at next-payment-at})))
+        (write-transaction! res
+          {:card-id    card-id
+           :processed? true})))
     (email/decline! (:email (auth/id->user (:user_id payload)))
       {:amount          amount
        :currency        currency
        :masked_card     masked_card
-       :next_payment_at next-payment-at})
-    (write-transaction! res)))
+       :next_payment_at next-payment-at})))
 
 
 (defn process-transaction!
   [{:keys [order_status order_id] :as res}]
-  (log/info "incoming data" order_id order_status)
+  (log/info "incoming data" order_status order_id)
   (verify! res)
-  (case order_status
-    "approved" (process-approved! res)
-    "declined" (process-declined! res)
-    (write-transaction! res)))
+  (let [res (assoc res :payload (edn/read-string (:merchant_data res)))]
+    (case order_status
+      "approved" (process-approved! res)
+      "declined" (process-declined! res)
+      (write-transaction! res))))
 
 
 (defn set-begin-charging!
@@ -382,21 +370,19 @@
               _        (log/debug "fondy ctx" (pr-str ctx))
               started? (set-begin-charging! uid (:id payment-params))
               res      (when started?
-                         (-> (utils/post! RECURRING-URL {:request (sign ctx)})
-                             :response))]
+                         (utils/post! RECURRING-URL {:request (sign ctx)}))]
           (cond
             (not started?)
             (log/error "could not start" {:uid uid :id (:id payment-params)})
 
-            res
+            (:response res)
             ;; we just store here and wait for callback for processing
-            (write-transaction! res)
+            (write-transaction! (:response res))
 
             :else
-            (do
-              (log/error "Recurrent payment error" res)
-              (throw (ex-info "Recurrent payment error"
-                       (or res {:wtf true}))))))))))
+            (let [original (or (-> res meta :original)
+                               res)]
+              (log/error "Recurrent payment error" original))))))))
 
 
 (defn refund! [order-id]
