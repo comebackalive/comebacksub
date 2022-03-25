@@ -373,8 +373,10 @@
             (write-transaction! res)
 
             :else
-            (throw (ex-info "Recurrent payment error"
-                     (or res {:wtf true})))))))))
+            (do
+              (log/error "Recurrent payment error" res)
+              (throw (ex-info "Recurrent payment error"
+                       (or res {:wtf true}))))))))))
 
 
 (defn refund! [order-id]
