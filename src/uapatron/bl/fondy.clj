@@ -377,7 +377,8 @@
            :planned     (:next_payment_at payment-params)})
 
         :else
-        (let [ctx      (make-recurrent-payment-ctx payment-params)
+        (let [_        (log/info "charging user" (:user_id payment-params))
+              ctx      (make-recurrent-payment-ctx payment-params)
               _        (log/debug "fondy ctx" (pr-str ctx))
               started? (set-begin-charging! uid (:id payment-params))
               res      (when started?
