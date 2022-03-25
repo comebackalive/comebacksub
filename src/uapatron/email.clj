@@ -39,14 +39,25 @@
                                          :frequency "month"})}})))
 
 
-(defn receipt! [email {:keys [amount currency next_payment_at]}]
+(defn receipt! [email {:keys [amount currency masked_card next_payment_at]}]
   (send! {:to       email
           :template "receipt"
           :data     {:support_email   "support@comebackalive.in.ua"
                      :amount          amount
                      :currency        currency
+                     :masked_card     masked_card
+                     :next_payment_at (t/short next_payment_at)}}))
+
+
+(defn decline! [email {:keys [amount currency masked_card next_payment_at]}]
+  (send! {:to       email
+          :template "decline"
+          :data     {:support_email   "support@comebackalive.in.ua"
+                     :amount          amount
+                     :currency        currency
+                     :masked_card     masked_card
                      :next_payment_at (t/short next_payment_at)}}))
 
 
 (comment
-  (email-auth! "alexander@solovyov.net"))
+  (email-auth! "alexander@solovyov.net" nil))

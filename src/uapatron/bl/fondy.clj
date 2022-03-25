@@ -123,21 +123,19 @@
    :returning     [:id]})
 
 
-(defn upsert-settings-q
-  [settings-ctx]
-  {:insert-into   :payment_settings
-   :values        [settings-ctx]
-   :on-conflict   [:user_id]
-   :do-update-set (keys settings-ctx)})
-
-
-(defn update-settings-q
+(defn save-settings-q
   [ctx]
-  {:update :payment_settings
-   :set    ctx
-   :where  [:and
-            [:= :id (:id ctx)]
-            [:= :user_id (:user_id ctx)]]})
+  (if (:id ctx)
+    {:update :payment_settings
+     :set    ctx
+     :where  [:and
+              [:= :id (:id ctx)]
+              [:= :user_id (:user_id ctx)]]}
+
+    {:insert-into   :payment_settings
+     :values        [ctx]
+     :on-conflict   [:user_id]
+     :do-update-set (keys ctx)}))
 
 
 (defn get-payment-link
@@ -177,56 +175,6 @@
                     [:= :transaction order-id]]}))
 
 
-(defn process-approved!
-  [{:keys [amount
-           currency
-           rectoken
-           rectoken_lifetime
-           masked_card
-           merchant_data
-           order_id]
-    :as   resp}]
-  (let [amount          (int (/ (utils/parse-int amount) 100))
-        payload         (edn/read-string merchant_data)
-        card            {:user_id          (:user_id payload)
-                         :token            rectoken
-                         :token_expires_at (when (not-empty rectoken_lifetime)
-                                             (t/parse-dt rectoken_lifetime))
-                         :card_pan         masked_card}
-        next-payment-at (calculate-next-payment-at
-                          (t/now)
-                          (:freq payload))]
-    (db/tx
-      (let [card-id  (when rectoken
-                       (:id (db/one (upsert-card-q card))))
-            settings {:user_id         (:user_id payload)
-                      :card_id         card-id
-                      :frequency       (:freq payload)
-                      :next_payment_at next-payment-at
-                      :paused_at       nil
-                      :amount          amount
-                      :currency        (db/->currency-type currency)}]
-        (db/tx
-          (db/q (save-transaction-q
-                  {:order_id  order_id
-                   :amount    amount
-                   :card_id   card-id
-                   :user_id   (:user_id payload)
-                   :type      (db/->transaction-type :Approved)
-                   :currency  (db/->currency-type currency)
-                   :data      (db/as-jsonb resp)
-                   :processed true}))
-          (when card-id
-            (if (:id payload)
-              (db/one (update-settings-q (assoc settings :id (:id payload))))
-              ;; we're allowing only one schedule per user right now
-              (db/one (upsert-settings-q settings)))))
-        (email/receipt! (:email (auth/id->user (:user_id payload)))
-          {:amount          amount
-           :currency        currency
-           :next_payment_at next-payment-at})))))
-
-
 (def STATUS-MAPPING
   {"created"    :Created
    "processing" :InProcessing
@@ -259,18 +207,89 @@
                :data     (db/as-jsonb res)}))))
 
 
+(defn process-approved!
+  [{:keys [amount
+           currency
+           rectoken
+           rectoken_lifetime
+           masked_card
+           merchant_data
+           order_id]
+    :as   resp}]
+  (let [amount          (int (/ (utils/parse-int amount) 100))
+        payload         (edn/read-string merchant_data)
+        card            {:user_id          (:user_id payload)
+                         :token            rectoken
+                         :token_expires_at (when (not-empty rectoken_lifetime)
+                                             (t/parse-dt rectoken_lifetime))
+                         :card_pan         masked_card}
+        next-payment-at (calculate-next-payment-at
+                          (t/now)
+                          (:freq payload))]
+    (db/tx
+      (let [card-id  (when rectoken
+                       (:id (db/one (upsert-card-q card))))
+            settings (cond-> {:user_id         (:user_id payload)
+                              :card_id         card-id
+                              :frequency       (:freq payload)
+                              :next_payment_at next-payment-at
+                              :paused_at       nil
+                              :amount          amount
+                              :currency        (db/->currency-type currency)}
+                       (:id payload)
+                       (assoc :id (:id payload)))]
+        (db/tx
+          (db/q (save-transaction-q
+                  {:order_id  order_id
+                   :amount    amount
+                   :card_id   card-id
+                   :user_id   (:user_id payload)
+                   :type      (db/->transaction-type :Approved)
+                   :currency  (db/->currency-type currency)
+                   :data      (db/as-jsonb resp)
+                   :processed true}))
+          (when card-id
+            ;; we're allowing only one schedule per user right now
+            (db/one (save-settings-q settings))))
+        (email/receipt! (:email (auth/id->user (:user_id payload)))
+          {:amount          amount
+           :currency        currency
+           :masked_card     masked_card
+           :next_payment_at next-payment-at})))))
+
+
+(defn process-declined! [{:keys [amount currency masked_card merchant_data]
+                          :as   res}]
+  (let [amount          (int (/ (utils/parse-int amount) 100))
+        payload         (edn/read-string merchant_data)
+        ;; there is an id in payload when it's recurring payment
+        next-payment-at (when (:id payload)
+                          (calculate-next-payment-at (t/now) "day"))]
+    (when (:id payload)
+      (db/one (save-settings-q {:id              (:id payload)
+                                :next_payment_at next-payment-at})))
+
+    (email/decline! (:email (auth/id->user (:user_id payload)))
+      {:amount          amount
+       :currency        currency
+       :masked_card     masked_card
+       :next_payment_at next-payment-at})
+    (write-transaction! res)))
+
+
 (defn process-transaction!
   [{:keys [order_status order_id] :as res}]
   (log/info "incoming data" order_id order_status)
   (verify! res)
   (case order_status
     "approved" (process-approved! res)
+    "declined" (process-declined! res)
     (write-transaction! res)))
 
 
 (defn set-begin-charging!
   [uid id]
-  (->> (db/one (update-settings-q {:id                id
+  (->> (db/one (save-settings-q {:id                id
                                    :user_id           uid
                                    :begin_charging_at (t/now)}))
        ::jdbc/update-count
@@ -279,7 +298,7 @@
 
 (defn set-paused!
   [uid id]
-  (->> (db/one (update-settings-q {:id        id
+  (->> (db/one (save-settings-q {:id        id
                                    :user_id   uid
                                    :paused_at (t/now)}))
        ::jdbc/update-count
@@ -288,7 +307,7 @@
 
 (defn set-resumed!
   [uid id]
-  (->> (db/one (update-settings-q {:id        id
+  (->> (db/one (save-settings-q {:id        id
                                    :user_id   uid
                                    :paused_at nil}))
        ::jdbc/update-count
@@ -368,7 +387,7 @@
             (not started?)
             (log/error "could not start" {:uid uid :id (:id payment-params)})
 
-            (= "success" (:response_status res))
+            res
             ;; we just store here and wait for callback for processing
             (write-transaction! res)
 
