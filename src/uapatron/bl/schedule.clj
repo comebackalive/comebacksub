@@ -42,13 +42,15 @@
 
 (defn run-schedule []
   (let [stop (atom false)
+        id   (format "s%x" (mod (System/currentTimeMillis)
+                             1000000))
         t    (Thread.
                (fn []
-                 (log/debug "schedule")
                  (if @stop
-                   (log/info "stop: signal")
+                   (log/infof "schedule %s: stop signal" id)
 
                    (do
+                     (log/debugf "schedule %s" id)
                      (try
                        (process-scheduled!)
                        (catch Exception e
@@ -56,9 +58,9 @@
                      (try
                        (Thread/sleep 300000)
                        (catch InterruptedException _
-                         (log/info "sleep interrupt")))
+                         (log/infof "schedule %s: sleep interrupt" id)))
                      (recur)))))]
-    (log/info "starting scheduler")
+    (log/infof "schedule %s: start" id)
     (.start t)
     (fn []
       (reset! stop true)
