@@ -125,6 +125,7 @@
 
 (defn save-settings-q
   [ctx]
+  (assert (:user_id ctx) "user_id is required")
   (if (:id ctx)
     {:update :payment_settings
      :set    ctx
@@ -257,8 +258,9 @@
                           (calculate-next-payment-at (t/now) "day"))]
     (db/tx
       (let [card-id (upsert-card res)]
-        (when next-payment-at
+        (when (:id payload)
           (db/one (save-settings-q {:id              (:id payload)
+                                    :user_id         (:user_id payload)
                                     :next_payment_at next-payment-at})))
         (write-transaction! res
           {:card-id    card-id
