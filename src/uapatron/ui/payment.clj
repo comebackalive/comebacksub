@@ -24,7 +24,7 @@
 
 (defn user-cards-q []
   {:from   [:cards]
-   :select [:card_pan
+   :select [:card_label
             :created_at]
    :where  [:and
             [:= :user_id (auth/uid)]
@@ -36,7 +36,7 @@
   ([id]
    {:from   [[:payment_settings :ps]]
     :join   [[:cards :c] [:= :c.id :ps.card_id]]
-    :select [:c.card_pan
+    :select [:c.card_label
              :ps.id
              :ps.next_payment_at
              :ps.frequency
@@ -51,9 +51,12 @@
 
 
 (defn card-fmt [s]
-  (->> (re-seq #".{4}" s)
-       (interpose " ")
-       (apply str)))
+  (case s
+    "applepay" "Apple Pay"
+    "googlepay" "Google Pay"
+    (->> (re-seq #".{4}" s)
+         (interpose " ")
+         (apply str))))
 
 
 ;;; test cards: https://docs.fondy.eu/en/docs/page/2/
@@ -113,7 +116,7 @@
         (if paused?
           [:p #t "Subscription is paused"]
           [:p #t "Next payment at " (t/short (:next_payment_at item))])
-        [:p #t "From card " (card-fmt (:card_pan item))]]
+        [:p #t "From card " (card-fmt (:card_label item))]]
 
        (if paused?
          [:form {:method "post"

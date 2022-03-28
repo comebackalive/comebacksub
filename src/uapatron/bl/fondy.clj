@@ -193,14 +193,18 @@
    "refunded"   :Refunded})
 
 
-(defn upsert-card [{:keys [rectoken rectoken_lifetime masked_card] :as res}]
+(defn upsert-card [{:keys [rectoken rectoken_lifetime masked_card payment_method] :as res}]
   (when rectoken
     (let [payload (res->payload res)
           card    {:user_id          (:user_id payload)
                    :token            rectoken
                    :token_expires_at (when (not-empty rectoken_lifetime)
                                        (t/parse-dt rectoken_lifetime))
-                   :card_pan         masked_card}]
+                   :card_pan         masked_card
+                   :card_label       (if (or (not payment_method)
+                                             (= payment_method "card"))
+                                       masked_card
+                                       payment_method)}]
       (:id (db/one (upsert-card-q card))))))
 
 
