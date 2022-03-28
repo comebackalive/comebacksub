@@ -207,16 +207,14 @@
 
   [{:keys [query-params]}]
 
-  (if (auth/uid)
-    (utils/ctx {:daily (contains? query-params :daily)}
-      (let [config (try (some-> (edn/read-string (:config query-params))
-                          (assoc :continue true))
-                        (catch Exception _
-                          nil))]
-        {:status  200
-         :headers {"Content-Type" "text/html"}
-         :body    (DashPage config)}))
-    (utils/msg-redir "unauthenticated")))
+  (utils/ctx {:daily (contains? query-params :daily)}
+    (let [config (try (some-> (edn/read-string (:config query-params))
+                        (assoc :continue true))
+                      (catch Exception _
+                        nil))]
+      {:status  200
+       :headers {"Content-Type" "text/html"}
+       :body    (DashPage config)})))
 
 
 (defn result
@@ -236,9 +234,6 @@
 
   (if (bl.fondy/set-paused! (auth/uid) (:id form-params))
     (utils/redir "/dash")
-    #_{:status  200
-     :headers {"Content-Type" "text/html"}
-     :body    (ScheduleItem (:id form-params))}
     {:status  200
      :headers {"Content-Type" "text/html"}
      :body    (SomeError)}))
@@ -250,9 +245,8 @@
 
   [{:keys [form-params]}]
 
-  (bl.fondy/set-resumed! (auth/uid) (:id form-params))
-  (utils/redir "/dash")
-  #_
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (ScheduleItem (:id form-params))})
+  (if (bl.fondy/set-resumed! (auth/uid) (:id form-params))
+    (utils/redir "/dash")
+    {:status  200
+     :headers {"Content-Type" "text/html"}
+     :body    (SomeError)}))

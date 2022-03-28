@@ -4,7 +4,8 @@
 
             [uapatron.config :as config]
             [uapatron.db :as db]
-            [uapatron.time :as t]))
+            [uapatron.time :as t]
+            [uapatron.utils :as utils]))
 
 
 (set! *warn-on-reflection* true)
@@ -80,6 +81,13 @@
       (let [res (handler req)]
         (.set *user nil)
         res))))
+
+
+(defn user-req [handler]
+  (fn [req]
+    (if (uid)
+      (handler req)
+      (utils/msg-redir "unauthenticated"))))
 
 
 (defn make-token [data]

@@ -32,7 +32,17 @@
   (expand [this _]
     (let [conf (dissoc (meta this)
                  :arglists :line :column :file :name :ns)]
-      (assoc conf :handler (deref this)))))
+      (assoc conf :handler (deref this))))
+
+  clojure.lang.PersistentArrayMap
+  (expand [this _]
+    (let [handler (:handler this)
+          conf    (merge (dissoc (meta handler)
+                           :arglists :line :column :file :name :ns)
+                    this)
+          mw      (:middleware conf)
+          handler (reduce #(%2 %1) handler mw)]
+      (assoc conf :handler handler))))
 
 
 (defn static [{{:keys [path]} :path-params}]
@@ -48,14 +58,17 @@
 
 (defn routes []
   [["/" #'ui.index/index]
-   ["/dash" #'ui.payment/dash]
+   ["/dash" {:middleware [auth/user-req]
+             :handler    #'ui.payment/dash}]
    ["/login" #'ui.index/start-login]
    ["/login/:token" #'ui.index/process-login]
    ["/logout" #'ui.index/logout]
    ["/lang/:lang" #'ui.index/set-lang]
    ["/currency/:currency" #'ui.index/set-currency]
-   ["/payment/pause" #'ui.payment/pause]
-   ["/payment/resume" #'ui.payment/resume]
+   ["/payment/pause" {:middleware [auth/user-req]
+                      :handler    #'ui.payment/pause}]
+   ["/payment/resume" {:middleware [auth/user-req]
+                       :handler    #'ui.payment/resume}]
    ["/payment/result" #'ui.payment/result]
    ["/api/payment-callback" #'api.payment/payment-callback]
    ["/api/go-to-payment" #'api.payment/go-to-payment]
