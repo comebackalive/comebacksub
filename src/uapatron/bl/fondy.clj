@@ -31,9 +31,12 @@
 
 
 (defn verify! [ctx]
-  (when-not (= (:signature (sign (dissoc ctx :signature :response_signature_string)))
-               (:signature ctx))
-    (throw (ex-info "Bad signature, check credentials" ctx))))
+  (let [signed (sign (dissoc ctx :signature :response_signature_string))]
+    (when-not (= (:signature signed) (:signature ctx))
+      (throw (ex-info "Bad signature, check credentials"
+               {:theirs             (:signature ctx)
+                :ours               (:signature sign)
+                ::invalid-signature true})))))
 
 
 (defn make-order-id []
@@ -190,9 +193,10 @@
    "refunded"   :Refunded})
 
 
-(defn upsert-card [{:keys [rectoken rectoken_lifetime masked_card payload]}]
+(defn upsert-card [{:keys [rectoken rectoken_lifetime masked_card] :as res}]
   (when rectoken
-    (let [card    {:user_id          (:user_id payload)
+    (let [payload (res->payload res)
+          card    {:user_id          (:user_id payload)
                    :token            rectoken
                    :token_expires_at (when (not-empty rectoken_lifetime)
                                        (t/parse-dt rectoken_lifetime))

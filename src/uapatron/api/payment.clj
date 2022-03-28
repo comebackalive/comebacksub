@@ -7,10 +7,16 @@
 
 
 (defn payment-callback [_req]
-  (bl.fondy/process-transaction! (:body _req))
-  {:status  200
-   :headers {"Content-Type" "application/json"}
-   :body    {:message "ok"}})
+  (try
+    (bl.fondy/process-transaction! (:body _req))
+    {:status  200
+     :headers {"Content-Type" "application/json"}
+     :body    {:message "ok"}}
+    (catch Exception e
+      (if (::bl.fondy/invalid-signature (ex-data e))
+        {:status 400
+         :body   "Invalid signature"}
+        (throw e)))))
 
 
 (defn go-to-payment
