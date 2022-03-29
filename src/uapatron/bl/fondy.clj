@@ -3,6 +3,7 @@
             [pandect.algo.sha1 :as sha1]
             [clojure.tools.logging :as log]
             [next.jdbc :as jdbc]
+            [cheshire.core :as json]
 
             [uapatron.db :as db]
             [uapatron.time :as t]
@@ -193,18 +194,22 @@
    "refunded"   :Refunded})
 
 
-(defn upsert-card [{:keys [rectoken rectoken_lifetime masked_card payment_method] :as res}]
+(defn upsert-card [{:keys [rectoken rectoken_lifetime masked_card] :as res}]
   (when rectoken
-    (let [payload (res->payload res)
-          card    {:user_id          (:user_id payload)
-                   :token            rectoken
-                   :token_expires_at (when (not-empty rectoken_lifetime)
-                                       (t/parse-dt rectoken_lifetime))
-                   :card_pan         masked_card
-                   :card_label       (if (or (not payment_method)
-                                             (= payment_method "card"))
-                                       masked_card
-                                       payment_method)}]
+    (let [payload        (res->payload res)
+          additional     (some-> res :additional_data json/parse-string)
+          payment_method (get additional "payment_method")
+          card           {:user_id          (:user_id payload)
+                          :token            rectoken
+                          :token_expires_at (when (not-empty rectoken_lifetime)
+                                              (t/parse-dt rectoken_lifetime))
+                          :card_pan         masked_card
+                          :card_label       (case payment_method
+                                              "apple"  "applepay"
+                                              "google" "googlepay"
+                                              "card"   masked_card
+                                              nil      masked_card
+                                              payment_method)}]
       (:id (db/one (upsert-card-q card))))))
 
 
