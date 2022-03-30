@@ -56,8 +56,9 @@
    :select   [:t.order_id
               :t.amount
               :t.currency
-              :c.card_label
-              :t.type]
+              :t.type
+              :t.created_at
+              :c.card_label]
    :where    [:in :t.id {:from     [[:transaction_log :t]]
                          :select   [[[:max :id] :id]]
                          :where    [:= :t.user_id (auth/uid)]
@@ -187,10 +188,11 @@
       [:section
        [:h2 #t "Transaction history"]
        [:table {:style "width: 100%; border-spacing: 10px"}
-        [:thead [:th " "] [:th "ID"] [:th "Amount"] [:th "Card"]]
+        [:thead [:th " "] [:th "Date"] [:th "ID"] [:th "Amount"] [:th "Card"]]
         (for [trans history]
           [:tr
            [:td (if (= (:type trans) "Approved") "✅" "❌")]
+           [:td (t/format :full (:created_at trans))]
            [:td (:order_id trans)]
            [:td {:style "text-align: right"}
             (:amount trans) " " (:currency trans)]

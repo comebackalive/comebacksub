@@ -1,5 +1,5 @@
 (ns uapatron.time
-  (:refer-clojure :exclude [short])
+  (:refer-clojure :exclude [short format])
   (:require [kasta.i18n])
   (:import [java.util Locale]
            [java.time Instant ZoneOffset LocalDateTime LocalDate]
@@ -38,22 +38,22 @@
 
 
 (def EN
-  {"short" (-> (DateTimeFormatter/ofPattern "MMMM, d")
+  {:short (-> (DateTimeFormatter/ofPattern "MMMM, d")
                (.withZone ZoneOffset/UTC))
-   "full"  (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss")
+   :full  (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss")
                (.withZone ZoneOffset/UTC))
-   "ymd"   (-> (DateTimeFormatter/ofPattern "yyyy-MM-dd")
+   :ymd   (-> (DateTimeFormatter/ofPattern "yyyy-MM-dd")
                (.withZone ZoneOffset/UTC))})
 
 
 (def UK
-  {"short" (-> (DateTimeFormatter/ofPattern "d MMMM")
+  {:short (-> (DateTimeFormatter/ofPattern "d MMMM")
                (.withZone ZoneOffset/UTC)
                (.withLocale uk_UA))
-   "full"  (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss")
+   :full  (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss")
                (.withZone ZoneOffset/UTC)
                (.withLocale uk_UA))
-   "ymd"   (-> (DateTimeFormatter/ofPattern "yyyy-MM-dd")
+   :ymd   (-> (DateTimeFormatter/ofPattern "yyyy-MM-dd")
                (.withZone ZoneOffset/UTC)
                (.withLocale uk_UA))})
 
@@ -65,7 +65,7 @@
     (get fmts fmt-name)))
 
 
-(defn -format [fmt-name value]
+(defn format [fmt-name value]
   (.format (get-fmt fmt-name) value))
 
 
@@ -82,9 +82,9 @@
 
 ;;; Concrete formatters/parsers
 
-(def short (partial -format "short"))
-(def parse-dt (partial -parse-time "full"))
-(def parse-date (partial -parse-date "ymd"))
+(def short (partial format :short))
+(def parse-dt (partial -parse-time :full))
+(def parse-date (partial -parse-date :ymd))
 
 (comment
   (parse-dt "01.04.2022 00:00:00")
