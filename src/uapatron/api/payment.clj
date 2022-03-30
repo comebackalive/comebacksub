@@ -6,9 +6,9 @@
             [uapatron.utils :as utils]))
 
 
-(defn payment-callback [_req]
+(defn payment-callback [req]
   (try
-    (bl.fondy/process-transaction! (:body _req))
+    (bl.fondy/process-transaction! (:body req))
     {:status  200
      :headers {"Content-Type" "application/json"}
      :body    {:message "ok"}}

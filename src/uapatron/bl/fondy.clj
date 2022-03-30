@@ -194,23 +194,22 @@
    "refunded"   :Refunded})
 
 
-(defn upsert-card [{:keys [rectoken rectoken_lifetime masked_card] :as res}]
+(defn make-card [{:keys [rectoken rectoken_lifetime masked_card] :as res}]
   (when rectoken
     (let [payload        (res->payload res)
-          additional     (some-> res :additional_data json/parse-string)
-          payment_method (get additional "payment_method")
-          card           {:user_id          (:user_id payload)
-                          :token            rectoken
-                          :token_expires_at (when (not-empty rectoken_lifetime)
-                                              (t/parse-dt rectoken_lifetime))
-                          :card_pan         masked_card
-                          :card_label       (case payment_method
-                                              "apple"     "applepay"
-                                              "googlepay" "googlepay"
-                                              "card"      masked_card
-                                              nil         masked_card
-                                              payment_method)}]
-      (db/one (upsert-card-q card)))))
+          additional     (some-> res :additional_info json/parse-string)
+          payment_method (get additional "payment_method")]
+      {:user_id          (:user_id payload)
+       :token            rectoken
+       :token_expires_at (when (not-empty rectoken_lifetime)
+                           (t/parse-dt rectoken_lifetime))
+       :card_pan         masked_card
+       :card_label       (case payment_method
+                           "apple"     "applepay"
+                           "googlepay" "googlepay"
+                           "card"      masked_card
+                           nil         masked_card
+                           payment_method)})))
 
 
 (defn write-transaction! [{:keys [order_status amount currency order_id]
@@ -239,7 +238,7 @@
     (let [payload         (res->payload res)
           amount          (int (/ (utils/parse-int amount) 100))
           next-payment-at (calculate-next-payment-at (t/now) (:freq payload))
-          card            (upsert-card res)
+          card            (some-> (make-card res) upsert-card-q db/one)
           settings        (cond-> {:user_id         (:user_id payload)
                                    :card_id         (:id card)
                                    :frequency       (:freq payload)
@@ -271,7 +270,7 @@
           ;; there is an id in payload when it's recurring payment
           next-payment-at (when (:id payload)
                             (calculate-next-payment-at (t/now) "day"))
-          card            (upsert-card res)]
+          card            (some-> (make-card res) upsert-card-q db/one)]
       (when (:id payload)
         (db/one (save-settings-q {:id              (:id payload)
                                   :user_id         (:user_id payload)
