@@ -10,7 +10,7 @@
 (def BATCH 100)
 (def NEXT-DAY-CHARGE
   "Time when we start charging for the next day"
-  (LocalTime/of 12 0))
+  (LocalTime/of 9 0))
 
 
 (defn ids-to-charge-q [which-day]

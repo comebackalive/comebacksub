@@ -552,6 +552,22 @@ footer {
 }
 
 
+/* Show the more robust requirement instructions below. */
+input ~ .reqs {
+  padding: 0 30px 0 50px;
+  color: #999;
+  max-height: 0;
+  transition: 0.28s;
+  overflow: hidden;
+  color: red;
+  font-style: italic;
+}
+
+input:invalid:focus:not(:placeholder-shown) ~ .reqs {
+  max-height: 200px;
+  padding: 0 30px 20px 50px;
+}
+
 
 /* MOBILE */
 

@@ -50,6 +50,22 @@
              #_[:not :is_deleted]]}))
 
 
+(defn user-transactions-q []
+  {:from     [[:transaction_log :t]]
+   :join     [[:cards :c] [:= :c.id :t.card_id]]
+   :select   [:t.order_id
+              :t.amount
+              :t.currency
+              :c.card_label
+              :t.type]
+   :where    [:in :t.id {:from     [[:transaction_log :t]]
+                         :select   [[[:max :id] :id]]
+                         :where    [:= :t.user_id (auth/uid)]
+                         :group-by [:t.order_id]}]
+   :order-by [[:t.id :desc]]
+   :limit    50})
+
+
 (defn card-fmt [s]
   (case s
     "applepay" "Apple Pay"
@@ -165,6 +181,21 @@
        [:p.t-bold #t "Subscription is charged automatically."]
        [:p #t "You can cancel the automatic renewal or change your payment at any time."]]]]))
 
+(defn Transactions []
+  (when-let [history (not-empty (db/q (user-transactions-q)))]
+    (hi/html
+      [:section
+       [:h2 #t "Transaction history"]
+       [:table {:style "width: 100%; border-spacing: 10px"}
+        [:thead [:th " "] [:th "ID"] [:th "Amount"] [:th "Card"]]
+        (for [trans history]
+          [:tr
+           [:td (if (= (:type trans) "Approved") "✅" "❌")]
+           [:td (:order_id trans)]
+           [:td {:style "text-align: right"}
+            (:amount trans) " " (:currency trans)]
+           [:td (card-fmt (:card_label trans))]])]])))
+
 
 (defn DashPage [config]
   (let [schedule (db/one (user-schedule-q))]
@@ -198,7 +229,9 @@
           [:h2 "Once a day (debug)"]
           [:div.payments
            (PayButton {:freq "day" :amount 100 :currency "UAH"})
-           (PayButton {:freq "day"})]])])))
+           (PayButton {:freq "day"})]])
+
+       (Transactions)])))
 
 
 ;;; Handlers

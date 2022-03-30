@@ -28,7 +28,13 @@
         [:label.subscribe__label {:for "email"} #t "Enter your email"]
         [:form.subscribe__form {:method "post" :action "/login"}
          [:input {:type "hidden" :name "config" :value config}]
-         [:input.subscribe__input {:type "email" :name "email" :id "email" :required true :placeholder "Email"}]
+         [:input.subscribe__input {:type        "email"
+                                   :pattern     "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$"
+                                   :title       #t "a valid email address"
+                                   :name        "email"
+                                   :id          "email"
+                                   :required    true
+                                   :placeholder "Email"}]
          [:button.subscribe__button {:name "login"} #t "Login"]]
         [:p.subscribe__inform
          #t "We promise to never spam you. This is for identification so you can manage your subscription, plus for receipts when we charge you."]]]

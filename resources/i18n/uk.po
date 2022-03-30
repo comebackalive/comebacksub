@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version:\n"
-"PO-Revision-Date: 2022-03-17 20:43+0200\n"
+"PO-Revision-Date: 2022-03-30 12:36+0300\n"
 "Last-Translator:\n"
 "Language-Team:\n"
 "Language: uk\n"
@@ -92,6 +92,10 @@ msgstr "Підписка призупинена"
 msgid "The Come Back Alive Foundation is no different from ordinary Ukrainians. We, like everyone else, are people who in 2014 had to change their way of life."
 msgstr "Фонд «Повернись живим» нічим не відрізняється від звичайних українців. Ми, як і всі, люди, яким у 2014 році довелося змінити свій спосіб життя."
 
+#: src/uapatron/ui/payment.clj
+msgid "Transaction history"
+msgstr "Історія транзакцій"
+
 #: src/uapatron/ui/index.clj
 msgid "We promise to never spam you. This is for identification so you can manage your subscription, plus for receipts when we charge you."
 msgstr "Ми обіцяємо не спамити. Це тільки для ідентифікації, щоб ви могли керувати своєю підпискою, плюс для чеків — ми будемо надсилати їх після успішного списання грошей."
@@ -119,6 +123,10 @@ msgstr "Інша сума"
 #: src/uapatron/ui/payment.clj
 msgid "Your weekly support"
 msgstr "Ваша щотижнева підтримка"
+
+#: src/uapatron/ui/index.clj
+msgid "a valid email address"
+msgstr "коректну емейл-адресу"
 
 #: src/uapatron/ui/payment.clj
 msgid "per day"

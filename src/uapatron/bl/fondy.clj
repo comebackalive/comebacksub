@@ -124,7 +124,7 @@
    :values        [card]
    :on-conflict   [:user_id :card_pan]
    :do-update-set (keys card)
-   :returning     [:id]})
+   :returning     [:id :card_label]})
 
 
 (defn save-settings-q
@@ -205,12 +205,12 @@
                                               (t/parse-dt rectoken_lifetime))
                           :card_pan         masked_card
                           :card_label       (case payment_method
-                                              "apple"  "applepay"
-                                              "google" "googlepay"
-                                              "card"   masked_card
-                                              nil      masked_card
+                                              "apple"     "applepay"
+                                              "googlepay" "googlepay"
+                                              "card"      masked_card
+                                              nil         masked_card
                                               payment_method)}]
-      (:id (db/one (upsert-card-q card))))))
+      (db/one (upsert-card-q card)))))
 
 
 (defn write-transaction! [{:keys [order_status amount currency order_id]
@@ -235,54 +235,55 @@
 
 (defn process-approved! [{:keys [amount currency masked_card]
                           :as   res}]
-  (let [payload         (res->payload res)
-        amount          (int (/ (utils/parse-int amount) 100))
-        next-payment-at (calculate-next-payment-at (t/now) (:freq payload))]
-    (db/tx
-      (let [card-id  (upsert-card res)
-            settings (cond-> {:user_id         (:user_id payload)
-                              :card_id         card-id
-                              :frequency       (:freq payload)
-                              :next_payment_at next-payment-at
-                              :paused_at       nil
-                              :amount          amount
-                              :currency        (db/->currency-type currency)}
-                       (:id payload)
-                       (assoc :id (:id payload)))]
-        (when card-id
-          ;; we're allowing only one schedule per user right now
-          (db/one (save-settings-q settings)))
-        (write-transaction! res
-          {:card-id    card-id
-           :processed? true})))
-    (email/receipt! (:email (auth/id->user (:user_id payload)))
-      {:amount          amount
-       :currency        currency
-       :masked_card     masked_card
-       :next_payment_at next-payment-at})))
+  (db/tx
+    (let [payload         (res->payload res)
+          amount          (int (/ (utils/parse-int amount) 100))
+          next-payment-at (calculate-next-payment-at (t/now) (:freq payload))
+          card            (upsert-card res)
+          settings        (cond-> {:user_id         (:user_id payload)
+                                   :card_id         (:id card)
+                                   :frequency       (:freq payload)
+                                   :next_payment_at next-payment-at
+                                   :paused_at       nil
+                                   :amount          amount
+                                   :currency        (db/->currency-type currency)}
+                            (:id payload)
+                            (assoc :id (:id payload)))]
+      (when card
+        ;; we're allowing only one schedule per user right now
+        (db/one (save-settings-q settings)))
+      (write-transaction! res
+        {:card-id    (:id card)
+         :processed? true})
+      (email/receipt! (:email (auth/id->user (:user_id payload)))
+        {:amount          amount
+         :currency        currency
+         :card_label      (:card_label card)
+         :masked_card     masked_card
+         :next_payment_at next-payment-at}))))
 
 
-(defn process-declined! [{:keys [amount currency masked_card]
+(defn process-declined! [{:keys [amount currency]
                           :as   res}]
-  (let [payload         (res->payload res)
-        amount          (int (/ (utils/parse-int amount) 100))
-        ;; there is an id in payload when it's recurring payment
-        next-payment-at (when (:id payload)
-                          (calculate-next-payment-at (t/now) "day"))]
-    (db/tx
-      (let [card-id (upsert-card res)]
-        (when (:id payload)
-          (db/one (save-settings-q {:id              (:id payload)
-                                    :user_id         (:user_id payload)
-                                    :next_payment_at next-payment-at})))
-        (write-transaction! res
-          {:card-id    card-id
-           :processed? true})))
-    (email/decline! (:email (auth/id->user (:user_id payload)))
-      {:amount          amount
-       :currency        currency
-       :masked_card     masked_card
-       :next_payment_at next-payment-at})))
+  (db/tx
+    (let [payload         (res->payload res)
+          amount          (int (/ (utils/parse-int amount) 100))
+          ;; there is an id in payload when it's recurring payment
+          next-payment-at (when (:id payload)
+                            (calculate-next-payment-at (t/now) "day"))
+          card            (upsert-card res)]
+      (when (:id payload)
+        (db/one (save-settings-q {:id              (:id payload)
+                                  :user_id         (:user_id payload)
+                                  :next_payment_at next-payment-at})))
+      (write-transaction! res
+        {:card-id    (:id card)
+         :processed? true})
+      (email/decline! (:email (auth/id->user (:user_id payload)))
+        {:amount          amount
+         :currency        currency
+         :masked_card     (:card_label card)
+         :next_payment_at next-payment-at}))))
 
 
 (defn process-transaction!
