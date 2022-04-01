@@ -27,7 +27,8 @@
        [:div
         [:label.subscribe__label {:for "email"} #t "Enter your email"]
         [:form.subscribe__form {:method "post" :action "/login"}
-         [:input {:type "hidden" :name "config" :value config}]
+         (when config
+           [:input {:type "hidden" :name "config" :value (pr-str config)}])
          [:input.subscribe__input {:type        "email"
                                    :pattern     "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$"
                                    :title       #t "a valid email address"
@@ -64,7 +65,10 @@
   {:parameters {:form  [:map
                         [:email string?]
                         [:config {:optional true} string?]]
-                :query [:map [:config {:optional true} string?]]}}
+                :query [:map
+                        [:freq {:optional true} string?]
+                        [:amount {:optional true} string?]
+                        [:currency {:optional true} string?]]}}
 
   [{:keys [form-params query-params request-method]}]
 
@@ -75,9 +79,12 @@
       {:status  200
        :headers {"Content-Type" "text/html"}
        :body    (LoginSent {:email (:email form-params)})})
-    {:status  200
-     :headers {"Content-Type" "text/html"}
-     :body    (LoginPage {:config (:config query-params)})}))
+
+    (let [config (not-empty (select-keys query-params
+                              [:freq :amount :currency]))]
+      {:status  200
+       :headers {"Content-Type" "text/html"}
+       :body    (LoginPage {:config config})})))
 
 
 (defn process-login [{:keys [path-params]}]

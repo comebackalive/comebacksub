@@ -230,8 +230,8 @@
          [:section.payment-section
           [:h2 "Once a day (debug)"]
           [:div.payments
-           (PayButton {:freq "day" :amount 100 :currency "UAH"})
-           (PayButton {:freq "day"})]])
+           (PayButton {:freq "day" :amount 100 :currency config/*currency*})
+           (PayButton {:freq "day" :currency config/*currency*})]])
 
        (Transactions)])))
 

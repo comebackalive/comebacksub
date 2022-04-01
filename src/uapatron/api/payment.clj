@@ -28,7 +28,7 @@
   [{:keys [form-params]}]
 
   (blet [config {:freq     (:freq form-params)
-                 :amount   (:amount form-params)
+                 :amount   (str (:amount form-params))
                  :currency (:currency form-params "UAH")}
          ;; TODO: process exception here (maybe rework exception to Option)
          link   (try (bl.fondy/get-payment-link (auth/user) config)
@@ -36,7 +36,7 @@
                        {:error e}))]
     (cond
       (not (auth/user))
-      (utils/redir (utils/route "/login" {:config (pr-str config)}))
+      (utils/redir (utils/route "/login" config))
 
       (:error link)
       {:status  200
