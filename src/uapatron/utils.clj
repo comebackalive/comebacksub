@@ -64,7 +64,7 @@
 ;;; HTTP
 
 (defn route [path q]
-  (let [q (into {} (remove (comp empty? second) q))]
+  (let [q (into {} (filter second q))]
     (if (empty? q)
       path
       (str path "?" (codec/form-encode q)))))
