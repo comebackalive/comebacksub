@@ -38,24 +38,34 @@
 
 
 (def EN
-  {:short (-> (DateTimeFormatter/ofPattern "MMMM, d")
-               (.withZone ZoneOffset/UTC))
-   :full  (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss")
-               (.withZone ZoneOffset/UTC))
-   :ymd   (-> (DateTimeFormatter/ofPattern "yyyy-MM-dd")
-               (.withZone ZoneOffset/UTC))})
+  {:short   (-> (DateTimeFormatter/ofPattern "MMMM, d")
+                (.withZone ZoneOffset/UTC))
+   :full    (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss")
+                (.withZone ZoneOffset/UTC))
+   :with-tz (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ssx")
+                (.withZone ZoneOffset/UTC))
+   :iso     (-> DateTimeFormatter/ISO_OFFSET_DATE_TIME
+                (.withZone ZoneOffset/UTC))
+   :ymd     (-> (DateTimeFormatter/ofPattern "yyyy-MM-dd")
+                (.withZone ZoneOffset/UTC))})
 
 
 (def UK
-  {:short (-> (DateTimeFormatter/ofPattern "d MMMM")
-               (.withZone ZoneOffset/UTC)
-               (.withLocale uk_UA))
-   :full  (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss")
-               (.withZone ZoneOffset/UTC)
-               (.withLocale uk_UA))
-   :ymd   (-> (DateTimeFormatter/ofPattern "yyyy-MM-dd")
-               (.withZone ZoneOffset/UTC)
-               (.withLocale uk_UA))})
+  {:short   (-> (DateTimeFormatter/ofPattern "d MMMM")
+                (.withZone ZoneOffset/UTC)
+                (.withLocale uk_UA))
+   :full    (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ss")
+                (.withZone ZoneOffset/UTC)
+                (.withLocale uk_UA))
+   :with-tz (-> (DateTimeFormatter/ofPattern "dd.MM.yyyy HH:mm:ssx")
+                (.withZone ZoneOffset/UTC)
+                (.withLocale uk_UA))
+   :iso     (-> DateTimeFormatter/ISO_OFFSET_DATE_TIME
+                (.withZone ZoneOffset/UTC)
+                (.withLocale uk_UA))
+   :ymd     (-> (DateTimeFormatter/ofPattern "yyyy-MM-dd")
+                (.withZone ZoneOffset/UTC)
+                (.withLocale uk_UA))})
 
 
 ;;; Formatting functions

@@ -43,7 +43,7 @@
      [:link {:rel "stylesheet" :href "https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"}]
      [:link {:rel "stylesheet" :href "https://fonts.googleapis.com/css?family=Roboto"}]
      [:link {:rel "stylesheet" :href (static "main.css")}]
-     #_[:script {:src (static "twinspark.js") :async true}]]))
+     [:script {:src (static "twinspark.js") :async true}]]))
 
 
 (defn header []

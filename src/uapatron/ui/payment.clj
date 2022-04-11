@@ -185,6 +185,13 @@
 (defn Transactions []
   (when-let [history (not-empty (db/q (user-transactions-q)))]
     (hi/html
+      [:script (hi/raw "
+(function() {
+  var dtf = new Intl.DateTimeFormat('ua', {dateStyle: 'medium', timeStyle: 'medium'});
+  twinspark.func('local-tz', (o) => {
+    o.el.innerText = dtf.format(Date.parse(o.el.dateTime));
+  });
+})();")]
       [:section
        [:h2 #t "Transaction history"]
        [:table {:style "width: 100%; border-spacing: 10px"}
@@ -192,7 +199,10 @@
         (for [trans history]
           [:tr
            [:td (if (= (:type trans) "Approved") "✅" "❌")]
-           [:td (t/format :full (:created_at trans))]
+           [:td [:time {:ts-action  "local-tz"
+                        :ts-trigger "load"
+                        :datetime   (t/format :iso (:created_at trans))}
+                 (t/format :with-tz (:created_at trans))]]
            [:td (:order_id trans)]
            [:td {:style "text-align: right"}
             (:amount trans) " " (:currency trans)]
