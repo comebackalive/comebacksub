@@ -4,6 +4,7 @@
             [clojure.tools.logging :as log]
             [next.jdbc :as jdbc]
             [cheshire.core :as json]
+            [kasta.i18n]
 
             [uapatron.db :as db]
             [uapatron.time :as t]
@@ -17,7 +18,7 @@
 (set! *warn-on-reflection* true)
 
 
-(def POST-URL "https://pay.fondy.eu/api/checkout/url/")
+(def MAKE-URL "https://pay.fondy.eu/api/checkout/url/")
 (def RECURRING-URL "https://pay.fondy.eu/api/recurring")
 (def REFUND-URL "https://pay.fondy.eu/api/reverse/order_id")
 
@@ -58,24 +59,13 @@
   {:order_id            (make-order-id)
    :order_desc          (make-desc freq amount currency)
    :merchant_id         (config/MERCHANT-ID)
+   :methods             ["card"]
    :currency            currency
    :amount              (* amount 100)
    :merchant_data       (pr-str {:user_id (:id user)
                                  :freq    freq})
    :required_rectoken   "Y"
-   :lang                (first ["uk"
-                                "en"
-                                "lv"
-                                "fr"
-                                "cs"
-                                "ro"
-                                "ru"
-                                "it"
-                                "sk"
-                                "pl"
-                                "es"
-                                "hu"
-                                "de"])
+   :lang                (or kasta.i18n/*lang* "en")
    :sender_email        (:email user)
    :response_url        (str "https://" (config/DOMAIN) "/payment/result")
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
@@ -147,7 +137,7 @@
   [user config]
   (let [ctx (make-link-ctx user config)
         _   (log/debug "fondy ctx" (pr-str ctx))
-        res (-> (utils/post! POST-URL {:request (sign ctx)})
+        res (-> (utils/post! MAKE-URL {:request (sign ctx)})
                 :response)]
     (if (= "success" (:response_status res))
       (:checkout_url res)
