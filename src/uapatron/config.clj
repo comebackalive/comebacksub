@@ -31,7 +31,7 @@
 (def PORT     #(-> (get-env "PORT" "1357"
                      "PORT to start on")
                    str/trim
-                   Integer/parseInt))
+                   Long.))
 (def TGTOKEN  #(get-env "TGTOKEN"
                  "TGTOKEN env var is empty, please set to Telegram bot token"))
 (def PGURL    #(get-env "PGURL"
@@ -41,7 +41,9 @@
                  "DOMAIN env var is empty, please set to site domain"))
 (def SECRET   #(get-env "SECRET" "SECRET key to sign session cookies and other"))
 (def POSTMARK #(get-env "POSTMARK" "Postmark API key"))
-(def MERCHANT-ID #(get-env "MERCHANTID" "Fondy merchant id"))
+(def MERCHANT-ID #(-> (get-env "MERCHANTID" "Fondy merchant id")
+                      str/trim
+                      Long.))
 (def MERCHANT-KEY #(get-env "MERCHANTKEY" "Fondy merchant pass"))
 
 (def TIMEOUT (constantly 3000))

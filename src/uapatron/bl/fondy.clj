@@ -12,15 +12,13 @@
             [uapatron.utils :as utils]
             [clojure.edn :as edn]
             [uapatron.email :as email]
-            [uapatron.auth :as auth]))
+            [uapatron.auth :as auth]
+            [org.httpkit.client :as http]))
 
 
 (set! *warn-on-reflection* true)
 
-
-(def MAKE-URL "https://pay.fondy.eu/api/checkout/url/")
-(def RECURRING-URL "https://pay.fondy.eu/api/recurring")
-(def REFUND-URL "https://pay.fondy.eu/api/reverse/order_id")
+(def BASE "https://pay.fondy.eu/api")
 
 
 (defn sign [ctx]
@@ -41,8 +39,29 @@
                 ::invalid-signature true})))))
 
 
-(defn make-order-id []
+(defn req! [url ctx]
+  (let [signed (sign ctx)
+        res    @(http/request {:method  :post
+                               :url     (str BASE url)
+                               :headers {"Content-Type" "application/json"}
+                               :body    (json/encode {:request signed})
+                               :timeout (config/TIMEOUT)})
+        data (-> res :body (json/parse-string true) :response)]
+    (log/debugf "req %s %s: %s" (:status res) url ctx)
+    (with-meta (or data {}) {:original res})))
+
+
+(defn make-suborder-id []
   (str "SUB-" (utils/uuid)))
+
+
+(defn make-order-id [tags hiddens]
+  (str
+    (format "cba-%x%x" (System/currentTimeMillis) (rand-int 1000000))
+    (when (seq tags)
+      (str "-" (str/join "-" (map #(str "#" %) tags))))
+    (when (seq hiddens)
+      (str "-" (str/join "-" (map #(str "!" %) hiddens))))))
 
 
 (defn make-desc
@@ -56,10 +75,9 @@
 
 (defn make-link-ctx
   [user {:keys [freq amount currency]}]
-  {:order_id            (make-order-id)
+  {:order_id            (make-suborder-id)
    :order_desc          (make-desc freq amount currency)
    :merchant_id         (config/MERCHANT-ID)
-   :methods             ["card"]
    :currency            currency
    :amount              (* amount 100)
    :merchant_data       (pr-str {:user_id (:id user)
@@ -79,7 +97,7 @@
            frequency
            amount
            token]}]
-  {:order_id            (make-order-id)
+  {:order_id            (make-suborder-id)
    :order_desc          (make-desc frequency amount currency true)
    :merchant_id         (config/MERCHANT-ID)
    :currency            currency
@@ -91,14 +109,6 @@
    :rectoken            token
    :sender_email        user_email
    :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})
-
-
-(defn make-refund-ctx [{:keys [order_id amount currency msg]}]
-  {:order_id    order_id
-   :currency    currency
-   :amount      (* amount 100)
-   :comment     msg
-   :merchant_id (config/MERCHANT-ID)})
 
 
 (defn save-transaction-q
@@ -133,12 +143,26 @@
      :do-update-set (keys ctx)}))
 
 
-(defn get-payment-link
-  [user config]
-  (let [ctx (make-link-ctx user config)
-        _   (log/debug "fondy ctx" (pr-str ctx))
-        res (-> (utils/post! MAKE-URL {:request (sign ctx)})
-                :response)]
+(defn get-payment-link [user config]
+  (let [res (req! "/checkout/url" (make-link-ctx user config))]
+    (if (= "success" (:response_status res))
+      (:checkout_url res)
+      (throw (ex-info "Error getting payment link" res)))))
+
+
+(defn one-time-link [config]
+  (let [res (req! "/checkout/url"
+              {:order_id            (make-order-id (:tags config) (:hiddens config))
+               :order_desc          (str "Donation to Come Back Alive"
+                                      (when (:tags config)
+                                        (str " #" (first (:tags config)))))
+               :merchant_id         (config/MERCHANT-ID)
+               :currency            "UAH"
+               :amount              (* 100 (:amount config))
+               :merchant_data       (pr-str config)
+               :sender_email        (:email config)
+               :response_url        (str "https://" (config/DOMAIN) "/payment/result")
+               :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})]
     (if (= "success" (:response_status res))
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))
@@ -280,9 +304,11 @@
   (log/info "incoming data" order_status order_id)
   (verify! res)
   (let [res (assoc res :payload (res->payload res))]
-    (case order_status
-      "approved" (process-approved! res)
-      "declined" (process-declined! res)
+    (if (-> res :payload :freq)
+      (case order_status
+        "approved" (process-approved! res)
+        "declined" (process-declined! res)
+        (write-transaction! res))
       (write-transaction! res))))
 
 
@@ -377,11 +403,10 @@
 
         :else
         (let [_        (log/info "charging user" (:user_id payment-params))
-              ctx      (make-recurrent-payment-ctx payment-params)
-              _        (log/debug "fondy ctx" (pr-str ctx))
               started? (set-begin-charging! uid (:id payment-params))
               res      (when started?
-                         (utils/post! RECURRING-URL {:request (sign ctx)}))]
+                         (req! "/recurring"
+                           (make-recurrent-payment-ctx payment-params)))]
           (cond
             (not started?)
             (log/error "could not start" {:uid uid :id (:id payment-params)})
@@ -405,9 +430,12 @@
                         :where  [:and
                                  [:= :order_id order-id]
                                  [:= :type (db/->transaction-type :Approved)]]})
-        ctx    (make-refund-ctx order)
-        res    (-> (utils/post! REFUND-URL {:request (sign ctx)})
-                   :response)
+        res    (req! "/reverse/order_id"
+                 {:order_id    (:order_id order)
+                  :currency    (:currency order)
+                  :amount      (* (:amount order) 100)
+                  :comment     (:msg order)
+                  :merchant_id (config/MERCHANT-ID)})
         amount (when (seq (:reversal_amount res))
                  (int (/ (utils/parse-int (:reversal_amount res)) 100)))]
     (db/q (save-transaction-q

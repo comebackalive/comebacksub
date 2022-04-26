@@ -48,3 +48,21 @@
        :headers {"Location" link}})))
 
 
+(defn one-time
+  {:parameters {:query [:map
+                        [:amount int?]
+                        [:tag string?]
+                        [:hidden string?]
+                        [:email {:optional true} string?]
+                        [:next string?]]}}
+  [{:keys [query-params]}]
+
+  (let [link (bl.fondy/one-time-link
+               {:amount  (:amount query-params)
+                :tags    (utils/ensure-vec (:tag query-params))
+                :hiddens (utils/ensure-vec (:hidden query-params))
+                :next    (:next query-params)
+                :email   (:email query-params)})]
+    {:status  302
+     :headers {"Location" link}}))
+

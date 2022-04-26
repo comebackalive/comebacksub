@@ -270,8 +270,11 @@
 
   [{:keys [params]}]
 
-  (bl.fondy/write-transaction! params)
-  (utils/msg-redir "/dash" "successful-payment"))
+  (let [payload (bl.fondy/res->payload params)]
+    (bl.fondy/write-transaction! params)
+    (if (:next payload)
+      (utils/redir (:next payload))
+      (utils/msg-redir "/dash" "successful-payment"))))
 
 
 (defn pause

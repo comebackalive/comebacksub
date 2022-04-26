@@ -72,6 +72,7 @@
    ["/payment/result" #'ui.payment/result]
    ["/api/payment-callback" #'api.payment/payment-callback]
    ["/api/go-to-payment" #'api.payment/go-to-payment]
+   ["/pay" #'api.payment/one-time]
    ["/version" #'version]
    ["/static/{*path}" #'static]])
 

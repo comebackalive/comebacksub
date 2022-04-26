@@ -99,3 +99,9 @@
   ([message] (msg-redir "/" message))
   ([url message]
    (redir (str url "?message=" message))))
+
+
+(defn ensure-vec [v]
+  (if (vector? v)
+    v
+    [v]))
