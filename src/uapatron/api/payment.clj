@@ -52,7 +52,7 @@
   {:parameters {:query [:map
                         [:amount int?]
                         [:tag string?]
-                        [:hidden string?]
+                        [:hidden {:optional true} string?]
                         [:email {:optional true} string?]
                         [:next string?]]}}
   [{:keys [query-params]}]
