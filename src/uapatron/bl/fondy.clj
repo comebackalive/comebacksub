@@ -59,9 +59,9 @@
   (str
     (format "cba-%x%x" (System/currentTimeMillis) (rand-int 1000000))
     (when (seq tags)
-      (str "-" (str/join "-" (map #(str "#" %) tags))))
+      (str "~" (str/join "~" (map #(str "#" %) tags))))
     (when (seq hiddens)
-      (str "-" (str/join "-" (map #(str "!" %) hiddens))))))
+      (str "~" (str/join "~" (map #(str "_" %) hiddens))))))
 
 
 (defn make-desc
