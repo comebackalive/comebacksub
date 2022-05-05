@@ -157,7 +157,7 @@
                                       (when (:tags config)
                                         (str " #" (first (:tags config)))))
                :merchant_id         (config/MERCHANT-ID)
-               :currency            "UAH"
+               :currency            (:currency config)
                :amount              (* 100 (:amount config))
                :merchant_data       (pr-str config)
                :sender_email        (:email config)

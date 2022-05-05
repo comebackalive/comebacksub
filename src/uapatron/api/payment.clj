@@ -51,6 +51,7 @@
 (defn one-time
   {:parameters {:query [:map
                         [:amount int?]
+                        [:currency {:optional true} [:enum "UAH" "EUR" "USD"]]
                         [:tag string?]
                         [:hidden {:optional true} string?]
                         [:email {:optional true} string?]
@@ -58,11 +59,12 @@
   [{:keys [query-params]}]
 
   (let [link (bl.fondy/one-time-link
-               {:amount  (:amount query-params)
-                :tags    (utils/ensure-vec (:tag query-params))
-                :hiddens (utils/ensure-vec (:hidden query-params))
-                :next    (:next query-params)
-                :email   (:email query-params)})]
+               {:amount   (:amount query-params)
+                :currency (:currency query-params "UAH")
+                :tags     (utils/ensure-vec (:tag query-params))
+                :hiddens  (utils/ensure-vec (:hidden query-params))
+                :next     (:next query-params)
+                :email    (:email query-params)})]
     {:status  302
      :headers {"Location" link}}))
 
