@@ -27,9 +27,9 @@
                                  :in-app-includes ["uapatron"]}))
 
 
-(mount/defstate schedule
-  :start (schedule/run-schedule)
-  :stop  (schedule))
+;; (mount/defstate schedule
+;;   :start (schedule/run-schedule)
+;;   :stop  (schedule))
 
 
 (defn -main [& args]
