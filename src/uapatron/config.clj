@@ -45,6 +45,10 @@
                       str/trim
                       Long.))
 (def MERCHANT-KEY #(get-env "MERCHANTKEY" "Fondy merchant pass"))
+(def SOLIDGATE-ID  #(get-env "SOLIDGATE_ID"
+                      "Solidgate public key"))
+(def SOLIDGATE-KEY #(get-env "SOLIDGATE_KEY"
+                      "Solidgate secret key"))
 
 (def TIMEOUT (constantly 3000))
 

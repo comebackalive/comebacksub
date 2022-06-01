@@ -1,14 +1,18 @@
 (ns uapatron.ui.payment
   (:require [hiccup2.core :as hi]
+            [kasta.i18n]
 
             [uapatron.auth :as auth]
             [uapatron.ui.base :as base]
             [uapatron.db :as db]
             [uapatron.time :as t]
             [uapatron.bl.fondy :as bl.fondy]
+            [uapatron.bl.solidgate :as bl.solidgate]
             [uapatron.utils :as utils]
             [uapatron.config :as config]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [cheshire.core :as json]
+            [clojure.string :as str]))
 
 
 (def PRESETS
@@ -209,11 +213,35 @@
            [:td (card-fmt (:card_label trans))]])]])))
 
 
+(defn FondyWidget []
+  (let [opts {:options
+              {:methods          ["card"]
+               :methods_disabled ["banklinks_eu", "local_methods"]}
+              :params
+              {:merchant_id         (config/MERCHANT-ID)
+               :required_rectoken   "y"
+               :currency            "UAH"
+               :amount              10
+               :order_desc          "qweqwe"
+               :lang                (or kasta.i18n/*lang* "en")
+               :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")}}]
+    (hi/html
+      [:script {:src "https://pay.fondy.eu/latest/checkout-vue/checkout.js"}]
+      [:link {:rel  "stylesheet"
+              :href "https://pay.fondy.eu/latest/checkout-vue/checkout.css"}]
+
+      [:div#app]
+      [:script (hi/raw (format "fondy('#app', %s);"
+                         (json/generate-string opts)))])))
+
+
 (defn DashPage [config]
   (let [schedule (db/one (user-schedule-q))]
     (base/wrap
       [:div.payment-page.container
        #t [:h1 "Hello, " (:email (auth/user))]
+
+       (FondyWidget)
 
        (when config
          [:div {:style {:margin-bottom "36px"}}
@@ -222,6 +250,7 @@
        (when schedule
          [:section
           (-ScheduleItem schedule)])
+
 
        #_(when-let [cards (seq (db/q (user-cards-q)))]
            [:section
@@ -233,7 +262,7 @@
                 (t/short (:created_at card))])]])
 
        (when (or (not schedule)
-                 (:paused_at schedule))
+               (:paused_at schedule))
          (PaymentSection))
 
        (when (:daily utils/*ctx*)
@@ -266,15 +295,27 @@
 
 
 (defn result
-  {:methods #{:post}}
+  {:methods #{:post :get}}
 
-  [{:keys [params]}]
+  [{:keys [params uri]}]
 
-  (let [payload (bl.fondy/res->payload params)]
-    (bl.fondy/write-transaction! params)
-    (if (:next payload)
-      (utils/redir (:next payload))
-      (utils/msg-redir "/dash" "successful-payment"))))
+  (let [mode (cond (str/includes? uri "fondy")     :fondy
+                   (str/includes? uri "solidgate") :solidgate)]
+    (case mode
+      :fondy
+      (let [payload (bl.fondy/res->payload params)]
+        (bl.fondy/write-transaction! params)
+        (if (:next payload)
+          (utils/redir (:next payload))
+          (utils/msg-redir "/dash" "successful-payment")))
+
+      :solidgate
+      (if (:next params)
+        (utils/redir (:next params))
+        (utils/msg-redir "/dash" "successful-payment"))
+
+      {:status 400
+       :body   "Unknown payment operator"})))
 
 
 (defn pause

@@ -1,12 +1,14 @@
 (ns uapatron.utils
-  (:import [java.util UUID])
-  (:require [clojure.string :as str]
-            [clojure.walk :as walk]
+  (:refer-clojure :exclude [bytes])
+  (:import [java.util UUID]
+           [org.apache.commons.codec.binary Hex])
+  (:require [clojure.walk :as walk]
             [org.httpkit.client :as http]
             [cheshire.core :as json]
             [ring.util.codec :as codec]
 
-            [uapatron.config :as config]))
+            [uapatron.config :as config]
+            [clojure.string :as str]))
 
 
 (set! *warn-on-reflection* true)
@@ -63,11 +65,13 @@
 
 ;;; HTTP
 
+
 (defn route [path q]
   (let [q (into {} (filter second q))]
-    (if (empty? q)
-      path
-      (str path "?" (codec/form-encode q)))))
+    (cond
+      (empty? q)               path
+      (str/includes? path "?") (str path (codec/form-encode q))
+      :else                    (str path "?" (codec/form-encode q)))))
 
 
 (defn post!
@@ -102,6 +106,15 @@
 
 
 (defn ensure-vec [v]
-  (if (vector? v)
-    v
-    [v]))
+  (cond
+    (vector? v) v
+    (nil? v)    nil
+    :else       [v]))
+
+
+(defn bytes ^bytes [^String s]
+  (.getBytes s "UTF-8"))
+
+
+(defn hex [^bytes v]
+  (Hex/encodeHexString v))

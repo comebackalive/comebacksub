@@ -2,21 +2,32 @@
   (:require [com.akovantsev.blet.core :refer [blet]]
 
             [uapatron.bl.fondy :as bl.fondy]
+            [uapatron.bl.solidgate :as bl.solidgate]
             [uapatron.auth :as auth]
-            [uapatron.utils :as utils]))
+            [uapatron.utils :as utils]
+            [clojure.string :as str]))
 
 
-(defn payment-callback [req]
-  (try
-    (bl.fondy/process-transaction! (:body req))
-    {:status  200
-     :headers {"Content-Type" "application/json"}
-     :body    {:message "ok"}}
-    (catch Exception e
-      (if (::bl.fondy/invalid-signature (ex-data e))
-        {:status 400
-         :body   "Invalid signature"}
-        (throw e)))))
+(defn payment-callback [{:keys [uri body]}]
+  (let [process (cond
+                  (str/includes? uri "fondy")
+                  bl.fondy/process-transaction!
+
+                  (str/includes? uri "solidgate")
+                  bl.solidgate/write-transaction!
+
+                  :else
+                  (throw (ex-info "Unknown payment provider" {:uri uri})))]
+    (try
+      (process body)
+      {:status  200
+       :headers {"Content-Type" "application/json"}
+       :body    {:message "ok"}}
+      (catch Exception e
+        (if (:invalid-signature (ex-data e))
+          {:status 400
+           :body   "Invalid signature"}
+          (throw e))))))
 
 
 (defn go-to-payment
@@ -58,7 +69,7 @@
                         [:next string?]]}}
   [{:keys [query-params]}]
 
-  (let [link (bl.fondy/one-time-link
+  (let [link (bl.solidgate/one-time-link
                {:amount   (:amount query-params)
                 :currency (:currency query-params "UAH")
                 :tags     (utils/ensure-vec (:tag query-params))

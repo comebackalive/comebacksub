@@ -34,9 +34,9 @@
   (let [signed (sign (dissoc ctx :signature :response_signature_string))]
     (when-not (= (:signature signed) (:signature ctx))
       (throw (ex-info "Bad signature, check credentials"
-               {:theirs             (:signature ctx)
-                :ours               (:signature sign)
-                ::invalid-signature true})))))
+               {:theirs            (:signature ctx)
+                :ours              (:signature sign)
+                :invalid-signature true})))))
 
 
 (defn req! [url ctx]
@@ -161,8 +161,8 @@
                :amount              (* 100 (:amount config))
                :merchant_data       (pr-str config)
                :sender_email        (:email config)
-               :response_url        (str "https://" (config/DOMAIN) "/payment/result")
-               :server_callback_url (str "https://" (config/DOMAIN) "/api/payment-callback")})]
+               :response_url        (str "https://" (config/DOMAIN) "/payment/fondy")
+               :server_callback_url (str "https://" (config/DOMAIN) "/api/payment/fondy")})]
     (if (= "success" (:response_status res))
       (:checkout_url res)
       (throw (ex-info "Error getting payment link" res)))))
@@ -233,7 +233,7 @@
         status  (or (get STATUS-MAPPING order_status)
                     (throw (ex-info "Uknown status" res)))
         amount  (when (seq amount)
-                  (int (/ (utils/parse-int amount) 100)))]
+                  (quot (utils/parse-int amount) 100))]
     (db/one (save-transaction-q
               {:amount    amount
                :order_id  order_id
