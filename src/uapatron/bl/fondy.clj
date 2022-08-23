@@ -155,7 +155,7 @@
               {:order_id            (make-order-id (:tags config) (:hiddens config))
                :order_desc          (str "Donation to Come Back Alive"
                                       (when (:tags config)
-                                        (str " #" (first (:tags config)))))
+                                        (str " #" (str/join " #" (:tags config)))))
                :merchant_id         (config/MERCHANT-ID)
                :currency            (:currency config)
                :amount              (* 100 (:amount config))

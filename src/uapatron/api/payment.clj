@@ -61,6 +61,7 @@
 
 (defn one-time
   {:parameters {:query [:map
+                        [:type {:optional true} [:enum "solidgate" "fondy"]]
                         [:amount int?]
                         [:currency {:optional true} [:enum "UAH" "EUR" "USD"]]
                         [:tag string?]
@@ -69,13 +70,15 @@
                         [:next string?]]}}
   [{:keys [query-params]}]
 
-  (let [link (bl.solidgate/one-time-link
-               {:amount   (:amount query-params)
+  (let [config {:amount   (:amount query-params)
                 :currency (:currency query-params "UAH")
                 :tags     (utils/ensure-vec (:tag query-params))
                 :hiddens  (utils/ensure-vec (:hidden query-params))
                 :next     (:next query-params)
-                :email    (:email query-params)})]
+                :email    (:email query-params)}
+        link (if (= type "fondy")
+               (bl.fondy/one-time-link config)
+               (bl.solidgate/one-time-link config))]
     {:status  302
      :headers {"Location" link}}))
 

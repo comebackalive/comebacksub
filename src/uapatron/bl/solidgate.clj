@@ -10,7 +10,8 @@
             [uapatron.config :as config]
             [uapatron.utils :as utils]
             [uapatron.bl.fondy :as fondy]
-            [uapatron.db :as db]))
+            [uapatron.db :as db]
+            [clojure.string :as str]))
 
 (def BASE "https://payment-page.solidgate.com/api/v1")
 
@@ -46,7 +47,7 @@
 (defn one-time-link [config]
   (let [desc (str "Donation to Come Back Alive"
                (when (:tags config)
-                 (str " #" (first (:tags config)))))
+                 (str " #" (str/join " #" (:tags config)))))
         data (req! "/init"
                {:order
                 {:currency          (:currency config "UAH")
