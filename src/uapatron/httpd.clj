@@ -8,6 +8,7 @@
             [reitit.core :as reitit]
             [reitit.coercion.malli]
             [reitit.coercion :as coercion]
+            [malli.transform]
             [cheshire.generate]
             [sentry-clj.ring :as sentry]
             [mount.core :as mount]
@@ -79,11 +80,38 @@
    ["/static/{*path}" #'static]])
 
 
+;;; https://github.com/metosin/reitit/issues/298#issuecomment-1161945435
+
+(defn singleton->vector
+  [x]
+  (if (string? x)
+    (if (vector? x) x [x])
+    x))
+
+
+(def custom-string-type-decoders
+  (assoc (malli.transform/-string-decoders) :vector singleton->vector))
+
+
+(def custom-string-transformer
+  (malli.transform/transformer
+   {:name            :string
+    :decoders        custom-string-type-decoders
+    :encoders        malli.transform/-string-decoders}))
+
+
+(def custom-malli-coercion
+  (reitit.coercion.malli/create
+    (assoc-in reitit.coercion.malli/default-options
+      [:transformers :string :default]
+      custom-string-transformer)))
+
+
 (def dev-router #(reitit/router (routes)
-                   {:data    {:coercion reitit.coercion.malli/coercion}
+                   {:data    {:coercion custom-malli-coercion}
                     :compile coercion/compile-request-coercers}))
 (def prod-router (reitit/router (routes)
-                   {:data    {:coercion reitit.coercion.malli/coercion}
+                   {:data    {:coercion custom-malli-coercion}
                     :compile coercion/compile-request-coercers}))
 
 

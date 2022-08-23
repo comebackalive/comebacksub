@@ -64,7 +64,7 @@
                         [:type {:optional true} [:enum "solidgate" "fondy"]]
                         [:amount int?]
                         [:currency {:optional true} [:enum "UAH" "EUR" "USD"]]
-                        [:tag string?]
+                        [:tag [:vector string?]]
                         [:hidden {:optional true} string?]
                         [:email {:optional true} string?]
                         [:next string?]]}}
@@ -76,7 +76,7 @@
                 :hiddens  (utils/ensure-vec (:hidden query-params))
                 :next     (:next query-params)
                 :email    (:email query-params)}
-        link (if (= type "fondy")
+        link (if (= (:type query-params) "fondy")
                (bl.fondy/one-time-link config)
                (bl.solidgate/one-time-link config))]
     {:status  302
